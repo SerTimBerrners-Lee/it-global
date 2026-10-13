@@ -1,0 +1,13 @@
+{
+  "name": "it-global",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.21.0" },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/start.js",
+    "test": "node --test --test-concurrency=1",
+    "build:pages": "node scripts/build-pages.mjs"
+  },
+  "dependencies": { "nodemailer": "10.1.0" }
+}

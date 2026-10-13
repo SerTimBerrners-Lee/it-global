@@ -1,0 +1,23 @@
+.header{gap:24px}
+.header-phone{display:inline-flex;align-items:center;flex-shrink:0;min-height:44px;color:#bc4324;font-size:28px;line-height:36px;font-weight:700;white-space:nowrap}
+.header-phone:hover{color:#96351b}
+.header #mobile-nav{top:100%}
+
+@media(min-width:1504px){.header-phone{font-size:30px}}
+@media(max-width:1280px){
+  .header .desktop-nav{display:none}
+  .header .menu-toggle{display:grid;place-items:center}
+}
+@media(max-width:1100px){.solution-header .solution-nav{display:none}}
+@media(max-width:850px){.header-phone{font-size:24px;line-height:32px}}
+@media(max-width:700px){
+  .header{display:grid;grid-template-columns:1fr auto;grid-template-rows:44px 40px;gap:4px 12px;height:auto;padding-block:10px}
+  .header>.brand{grid-column:1;grid-row:1;justify-self:start}
+  .header-phone{grid-column:1 / -1;grid-row:2;justify-self:start;font-size:26px;line-height:32px}
+  .header-actions,.solution-header>.button{grid-column:2;grid-row:1;margin-left:0}
+}
+@media(max-width:540px){
+  .header{column-gap:8px}
+  .header>.brand{font-size:24px;line-height:32px}
+  .header .header-cta{padding-inline:12px}
+}
