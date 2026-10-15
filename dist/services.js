@@ -89,6 +89,7 @@ export const services = [
     title: "Видеовстречи",
     product: "Jitsi Meet",
     logo: "jitsi.svg",
+    page: "/services/jitsi/",
     category: "communication",
     description:
       "Видеовстречи на собственном домене с настройками доступа для команды.",
@@ -186,6 +187,7 @@ export const services = [
     title: "Рабочие пароли",
     product: "Vaultwarden",
     logo: "vaultwarden.svg",
+    page: "/services/vaultwarden/",
     category: "business",
     description:
       "Общее хранилище паролей с разграничением доступа и двухфакторной защитой.",
@@ -202,6 +204,7 @@ export const services = [
     title: "Планирование проектов",
     product: "OpenProject Community",
     logo: "openproject.svg",
+    page: "/services/openproject/",
     category: "work",
     description: "Планы, сроки, задачи и диаграммы Ганта для всей команды.",
     replaces: ["Asana", "Monday.com", "Microsoft Project"],
