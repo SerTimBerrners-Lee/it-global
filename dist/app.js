@@ -3,6 +3,7 @@ import { initializeCalculator } from "./calculator-ui.js";
 import { initializeHero } from "./hero.js";
 import { initializeRequestForm } from "./request-form.js";
 import { serviceCard } from "./catalog.js";
+import { trackGoal } from "./analytics.js";
 
 /** @type {(selector: string) => Element | null} */
 const $ = (selector) => document.querySelector(selector);
@@ -31,6 +32,8 @@ function openDialog(id, opener) {
   $$("dialog[open]").forEach((dialog) => dialog.close());
   closeMenu();
   $(id).showModal();
+
+  if (id === "#request-dialog") trackGoal("request_open");
 }
 
 /** @returns {void} */
@@ -313,9 +316,11 @@ syncSelections();
 const requestParams = new URLSearchParams(location.search);
 const requestedService = services.find((service) => service.id === requestParams.get("request"));
 
-if (requestedService) {
-  selected.add(requestedService.id);
-  syncSelections();
+if (requestedService || requestParams.get("request") === "consultation") {
+  if (requestedService) {
+    selected.add(requestedService.id);
+    syncSelections();
+  }
 
   const message = $("#request-form [name=message]");
 

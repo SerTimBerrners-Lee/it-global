@@ -1,21 +1,30 @@
 import { readFile, writeFile, mkdir, rm } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { services } from "../dist/services.js";
+import { serviceCard } from "../dist/catalog.js";
 
 /** @typedef {{title: string, text: string}} Item */
 /** @typedef {{question: string, answer: string}} Question */
-/** @typedef {{slug: string, navTitle: string, title: string, description: string, heading: string, intro: string, visual: string, outputTitle: string, outputText: string, useCaseHeading: string, useCases: Item[], process: Item[], requirementsHeading: string, requirements: Item[], faq: Question[], requestText: string}} Solution */
+/** @typedef {{slug: string, navTitle: string, title: string, description: string, heading: string, intro: string, visual: string, outputTitle: string, outputText: string, useCaseHeading: string, useCases: Item[], process: Item[], requirementsHeading: string, requirements: Item[], faq: Question[], requestText: string, section?: 'solutions' | 'services', requestServiceId?: string | null, sources?: {title: string, url: string}[]}} Solution */
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const dist = path.join(root, "dist");
-/** @type {{url: string | null}} */
+/** @type {{url: string | null, metrikaId?: number | null}} */
 const site = JSON.parse(await readFile(path.join(root, "content/site.json"), "utf8"));
 /** @type {Solution[]} */
-const pages = JSON.parse(await readFile(path.join(root, "content/solutions.json"), "utf8"));
+const aiPages = JSON.parse(await readFile(path.join(root, "content/solutions.json"), "utf8"));
+/** @type {Solution[]} */
+const servicePages = JSON.parse(await readFile(path.join(root, "content/services-pages.json"), "utf8"));
+const pages = [...aiPages, ...servicePages.map((page) => ({ ...page, section: /** @type {const} */ ("services") }))];
 const origin = site.url ? new URL(site.url) : null;
 
 if (origin && (origin.protocol !== "https:" || origin.pathname !== "/" || origin.search || origin.hash)) {
   throw new Error("В content/site.json нужен HTTPS-адрес сайта без пути и параметров.");
+}
+
+if (site.metrikaId != null && (!Number.isSafeInteger(site.metrikaId) || site.metrikaId <= 0)) {
+  throw new Error("Номер счётчика Метрики должен быть положительным целым числом.");
 }
 
 if (new Set(pages.map((page) => page.slug)).size !== pages.length) {
@@ -29,9 +38,9 @@ function escape(value) {
   return value.replace(/[&<>"']/g, (character) => entities[character]);
 }
 
-/** @param {string} slug @returns {string} */
-function route(slug) {
-  return `/solutions/${slug}/`;
+/** @param {string} slug @param {string} [section] @returns {string} */
+function route(slug, section = "solutions") {
+  return `/${section}/${slug}/`;
 }
 
 /** @param {string} pathname @returns {string | undefined} */
@@ -45,9 +54,9 @@ function metadata(title, description, pathname, isService = false) {
   const data = {
     "@context": "https://schema.org",
     "@graph": [
-      { "@type": "Organization", name: "IT Global", url: absolute("/") },
+      { "@type": "Organization", "@id": absolute("/#organization"), name: "IT Global", url: absolute("/"), telephone: "+79211153143", logo: absolute("/favicon.svg"), contactPoint: { "@type": "ContactPoint", telephone: "+79211153143", contactType: "sales", availableLanguage: "Russian" } },
       isService
-        ? { "@type": "Service", name: title.replace(/\s*[|]\s*IT Global$/, ""), description, url, provider: { "@type": "Organization", name: "IT Global", url: absolute("/") } }
+        ? { "@type": "Service", name: title.replace(/\s*[|]\s*IT Global$/, ""), description, url, provider: { "@id": absolute("/#organization") } }
         : { "@type": "WebSite", name: "IT Global", description, url },
     ],
   };
@@ -64,7 +73,7 @@ ${origin ? `<meta property="og:image" content="${escape(absolute("/assets/hero-o
 
 /** @param {Solution[]} list @returns {string} */
 function solutionLinks(list) {
-  return list.map((page) => `<a class="solution-link" href="${route(page.slug)}"><h3>${escape(page.navTitle)}</h3><p>${escape(page.description)}</p></a>`).join("\n");
+  return list.map((page) => `<a class="solution-link" href="${route(page.slug, page.section)}"><h3>${escape(page.navTitle)}</h3><p>${escape(page.description)}</p></a>`).join("\n");
 }
 
 /** @param {Item[]} items @returns {string} */
@@ -74,14 +83,19 @@ function cards(items) {
 
 /** @param {Solution} page @returns {string} */
 function renderPage(page) {
-  const request = `/?request=local-ai&task=${encodeURIComponent(page.requestText)}#services`;
+  const isService = page.section === "services";
+  const service = services.find((item) => item.id === page.requestServiceId);
+  const request = `/?request=${isService ? service?.id || "consultation" : "local-ai"}&task=${encodeURIComponent(page.requestText)}#services`;
   const breadcrumbs = [{ name: "Главная", path: "/" }];
 
-  if (page.slug !== "local-ai") breadcrumbs.push({ name: "Локальный ИИ", path: route("local-ai") });
+  if (!isService && page.slug !== "local-ai") breadcrumbs.push({ name: "Локальный ИИ", path: route("local-ai") });
 
-  breadcrumbs.push({ name: page.navTitle, path: route(page.slug) });
+  breadcrumbs.push({ name: page.navTitle, path: route(page.slug, page.section) });
   const breadcrumbData = origin ? `<script type="application/ld+json">${JSON.stringify({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: breadcrumbs.map((item, index) => ({ "@type": "ListItem", position: index + 1, name: item.name, item: absolute(item.path) })) }).replaceAll("<", "\\u003c")}</script>` : "";
-  const related = pages.filter((item) => item.slug !== page.slug);
+  const related = pages.filter((item) => item.section === page.section && item.slug !== page.slug);
+  const symbol = isService
+    ? service ? `<img src="/assets/logos/${escape(service.logo)}" alt="" width="88" height="88">` : '<div class="demo-services" aria-hidden="true"><img src="/assets/logos/mailu.png" alt="" width="64" height="64"><img src="/assets/logos/nextcloud.svg" alt="" width="64" height="64"><img src="/assets/logos/onlyoffice.svg" alt="" width="64" height="64"></div>'
+    : page.visual === "speech" || page.visual === "transcription" ? '<span class="demo-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>' : '<img src="/assets/logos/ollama.svg" alt="" width="72" height="72">';
 
   return `<!doctype html>
 <html lang="ru">
@@ -91,7 +105,7 @@ function renderPage(page) {
 <meta name="theme-color" content="#f0eee7">
 <title>${escape(page.title)}</title>
 <meta name="description" content="${escape(page.description)}">
-${metadata(page.title, page.description, route(page.slug), true)}
+${metadata(page.title, page.description, route(page.slug, page.section), true)}
 ${breadcrumbData}
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preload" href="/assets/fonts/ys-text-display-wide.woff2" as="font" type="font/woff2" crossorigin>
@@ -99,6 +113,7 @@ ${breadcrumbData}
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/solutions.css">
 <link rel="stylesheet" href="/phone.css">
+<script type="module" src="/analytics.js"></script>
 </head>
 <body class="solution-page">
 <a class="skip-link" href="#main">Перейти к содержанию</a>
@@ -112,22 +127,23 @@ ${breadcrumbData}
 <div class="solution-hero-shell">
 <nav class="breadcrumbs container" aria-label="Хлебные крошки">${breadcrumbs.map((item, index) => index === breadcrumbs.length - 1 ? `<span aria-current="page">${escape(item.name)}</span>` : `<a href="${item.path}">${escape(item.name)}</a><span aria-hidden="true">/</span>`).join("")}</nav>
 <section class="solution-hero container" aria-labelledby="solution-title">
-<div class="solution-copy"><h1 id="solution-title">${escape(page.heading)}</h1><p>${escape(page.intro)}</p><a class="button primary" href="${escape(request)}">Подобрать модель под задачу</a><span class="solution-hero-note">На вашем сервере. С настройкой и годом поддержки.</span></div>
+<div class="solution-copy"><h1 id="solution-title">${escape(page.heading)}</h1><p>${escape(page.intro)}</p><a class="button primary" href="${escape(request)}">${isService ? "Обсудить внедрение" : "Подобрать модель под задачу"}</a><span class="solution-hero-note">На вашем сервере. С настройкой и годом поддержки.</span></div>
 <div class="solution-demo solution-demo-${escape(page.visual)}" aria-label="Иллюстрация сценария">
 <div class="demo-top"><span class="demo-status" aria-hidden="true"></span>На вашем сервере</div>
-<div class="demo-symbol" aria-hidden="true">${page.visual === "speech" || page.visual === "transcription" ? '<span class="demo-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>' : '<img src="/assets/logos/ollama.svg" alt="" width="72" height="72">'}</div>
-<div class="demo-result"><h2>${escape(page.outputTitle)}</h2><p>${escape(page.outputText)}</p></div><p class="demo-caption">Пример результата</p>
+<div class="demo-symbol" aria-hidden="true">${symbol}</div>
+<div class="demo-result"><h2>${escape(page.outputTitle)}</h2><p>${escape(page.outputText)}</p></div><p class="demo-caption">${isService ? "Сценарий использования" : "Пример результата"}</p>
 </div>
 </section>
 </div>
 <section class="solution-section container" aria-labelledby="use-cases"><h2 id="use-cases">${escape(page.useCaseHeading)}</h2><div class="solution-cards">${cards(page.useCases)}</div></section>
 <section class="solution-section solution-process container" aria-labelledby="process"><h2 id="process">Что сделаем для запуска</h2><div class="solution-cards">${cards(page.process)}</div></section>
 <section class="solution-section container" aria-labelledby="requirements"><h2 id="requirements">${escape(page.requirementsHeading)}</h2><div class="solution-cards">${cards(page.requirements)}</div></section>
-<section class="solution-offer container" aria-labelledby="offer"><div><h2 id="offer">Разовое внедрение, год поддержки</h2><p>Один сервис за 9 900 ₽ или весь набор за 49 900 ₽. Подберём модель, настроим запуск и передадим доступы вашей команде.</p><p>Оборудование и аренда сервера оплачиваются отдельно. Требования к памяти и видеокарте зависят от модели и нагрузки. Состав работ согласуем до внедрения.</p></div><a class="button primary" href="${escape(request)}">Подготовить заявку</a></section>
+<section class="solution-offer container" aria-labelledby="offer"><div><h2 id="offer">Разовое внедрение, год поддержки</h2><p>Один сервис за 9 900 ₽ или весь набор за 49 900 ₽. ${isService ? "Настроим выбранные сервисы и передадим доступы вашей команде." : "Подберём модель, настроим запуск и передадим доступы вашей команде."}</p><p>Оборудование и аренда сервера оплачиваются отдельно. ${isService ? "Коммерческие дополнения, лицензии и дополнительные работы согласуем отдельно." : "Требования к памяти и видеокарте зависят от модели и нагрузки."} Состав работ согласуем до внедрения.</p></div><a class="button primary" href="${escape(request)}">Подготовить заявку</a></section>
 <section class="solution-section solution-faq container" aria-labelledby="questions"><h2 id="questions">Вопросы и ответы</h2><div class="faq-list">${page.faq.map((item) => `<details><summary>${escape(item.question)}<span class="faq-plus" aria-hidden="true">+</span></summary><p>${escape(item.answer)}</p></details>`).join("\n")}</div></section>
-<section class="solution-section container" aria-labelledby="related"><h2 id="related">Другие задачи для локального ИИ</h2><div class="solution-links">${solutionLinks(related)}</div></section>
+${page.sources?.length ? `<div class="solution-sources container"><p>Возможности и ограничения: ${page.sources.map((source) => `<a href="${escape(source.url)}" target="_blank" rel="noopener noreferrer">${escape(source.title)}</a>`).join(", ")}. Проверено 15 октября 2026 года.</p></div>` : ""}
+<section class="solution-section container" aria-labelledby="related"><h2 id="related">${isService ? "Другие сервисы для вашей команды" : "Другие задачи для локального ИИ"}</h2><div class="solution-links">${solutionLinks(related)}</div></section>
 </main>
-<footer class="solution-footer"><div class="container"><a class="brand" href="/"><span>IT</span><i aria-hidden="true"></i><span>Global</span></a><nav aria-label="Решения">${pages.map((item) => `<a href="${route(item.slug)}">${escape(item.navTitle)}</a>`).join("")}<a href="/#services">Все сервисы</a></nav><p>Подбор и внедрение открытого ПО в вашей инфраструктуре. Лицензии моделей, голоса и необходимые ресурсы проверяем до запуска.</p><p>© 2026 IT Global</p></div></footer>
+<footer class="solution-footer"><div class="container"><a class="brand" href="/"><span>IT</span><i aria-hidden="true"></i><span>Global</span></a><nav aria-label="Решения">${pages.map((item) => `<a href="${route(item.slug, item.section)}">${escape(item.navTitle)}</a>`).join("")}<a href="/#services">Все сервисы</a></nav><p>Подбор и внедрение открытого ПО в вашей инфраструктуре. Лицензии и необходимые ресурсы проверяем до запуска.</p><a class="footer-contact" href="tel:+79211153143">+7 (921) 115-31-43</a><p>© 2026 IT Global</p></div></footer>
 </body>
 </html>
 `;
@@ -136,24 +152,43 @@ ${breadcrumbData}
 for (const page of pages) {
   if (!/^[a-z][a-z-]+$/.test(page.slug)) throw new Error("Некорректный адрес страницы.");
 
-  const directory = path.join(dist, "solutions", page.slug);
+  const directory = path.join(dist, page.section || "solutions", page.slug);
   await mkdir(directory, { recursive: true });
   await writeFile(path.join(directory, "index.html"), renderPage(page));
 }
 
 let home = await readFile(path.join(dist, "index.html"), "utf8");
-const seo = `<!-- site-meta:start -->${metadata("IT Global | Ваши сервисы на вашем сервере", "Корпоративная почта, CRM, документы и локальный ИИ на вашем сервере. Подбор открытого ПО, разовое внедрение и год поддержки каждого сервиса.", "/")}<!-- site-meta:end -->`;
+const homeTitle = "Внедрение сервисов на вашем сервере от 9 900 ₽ | IT Global";
+const homeDescription = "Настроим почту, файлы, документы, CRM и локальный ИИ на вашем сервере. Один сервис за 9 900 ₽ или набор за 49 900 ₽. Год поддержки каждого сервиса.";
+const seo = `<!-- site-meta:start -->${metadata(homeTitle, homeDescription, "/")}<!-- site-meta:end -->`;
+home = home.replace(/<title>[^<]*<\/title>/, `<title>${homeTitle}</title>`)
+  .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${escape(homeDescription)}">`)
+  .replace(/<h1>[\s\S]*?<\/h1>/, "<h1>Корпоративные сервисы<br>на вашем сервере</h1>");
 home = home.includes("<!-- site-meta:start -->")
   ? home.replace(/<!-- site-meta:start -->[\s\S]*?<!-- site-meta:end -->/, seo)
   : home.replace("</head>", `${seo}</head>`);
-const links = `<!-- solution-links:start --><section class="solutions-home container" aria-labelledby="solutions-heading"><h2 id="solutions-heading">Локальный ИИ под ваши задачи</h2><p>Развернём модели для текста, речи и работы с документами в вашей инфраструктуре.</p><div class="solution-links">${solutionLinks(pages)}</div></section><!-- solution-links:end -->`;
+const links = `<!-- solution-links:start --><section class="solutions-home container" aria-labelledby="solutions-heading"><h2 id="solutions-heading">Локальный ИИ под ваши задачи</h2><p>Развернём модели для текста, речи и работы с документами в вашей инфраструктуре.</p><div class="solution-links">${solutionLinks(aiPages)}</div></section><!-- solution-links:end -->`;
 home = home.includes("<!-- solution-links:start -->")
   ? home.replace(/<!-- solution-links:start -->[\s\S]*?<!-- solution-links:end -->/, links)
   : home.replace('<section class="consultation"', `${links}\n<section class="consultation"`);
+const catalog = `<!-- catalog:start --><div class="service-grid" id="software-grid">${services.map((service) => serviceCard(service, false, true)).join("\n")}</div><!-- catalog:end -->`;
+home = home.includes("<!-- catalog:start -->")
+  ? home.replace(/<!-- catalog:start -->[\s\S]*?<!-- catalog:end -->/, catalog)
+  : home.replace('<div class="service-grid" id="software-grid"></div>', catalog);
+home = home.replace(/(<p[^>]*id="catalog-result-count"[^>]*>)[\s\S]*?<\/p>/, `$1Найдено сервисов: ${services.length} из ${services.length}</p>`);
+
+for (const service of services.filter((item) => item.page)) {
+  const button = new RegExp(`<button type="button" data-details="${service.id}">([^<]+)</button\\s*>`, "g");
+  home = home.replace(button, `<a href="${service.page}">$1</a>`);
+}
+
+home = home.replace('<button type="button" class="button" data-journey>Подробнее</button>', '<a class="button" href="/services/cloud-migration/">Подробнее</a>');
 await writeFile(path.join(dist, "index.html"), home);
 
+await writeFile(path.join(dist, "analytics-config.js"), `// Generated by scripts/build-pages.mjs.\nexport const metrikaId = ${site.metrikaId ?? "null"};\n`);
+
 if (origin) {
-  const urls = ["/", ...pages.map((page) => route(page.slug))];
+  const urls = ["/", ...pages.map((page) => route(page.slug, page.section))];
   await writeFile(path.join(dist, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((url) => `  <url><loc>${escape(absolute(url))}</loc></url>`).join("\n")}\n</urlset>\n`);
 } else {
   await rm(path.join(dist, "sitemap.xml"), { force: true });

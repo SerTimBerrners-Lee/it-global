@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import http from "node:http";
+import { mkdtemp, rmdir, stat, unlink, utimes, writeFile } from "node:fs/promises";
+import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { createApp } from "../server/server.js";
 
 const origin = "https://its-global.ru";
@@ -113,7 +116,7 @@ function post(port, payload = validRequest(), headers = {}) {
   });
 }
 
-test("serves all five public pages with correct HTML and response headers", async (context) => {
+test("serves public pages with correct HTML and response headers", async (context) => {
   const app = await fixture(context);
 
   for (const pathname of ["/", "/solutions/local-ai/", "/solutions/transcription/", "/solutions/speech-synthesis/", "/solutions/document-assistant/"]) {
@@ -150,6 +153,106 @@ test("HEAD has no body, directory redirects preserve queries and unsupported met
   assert.equal(staticPost.headers.allow, "GET, HEAD");
   assert.equal(apiGet.status, 405);
   assert.equal(apiGet.headers.allow, "POST");
+  assert.equal(apiGet.headers["cache-control"], "no-store");
+  assert.equal(apiGet.headers.etag, undefined);
+});
+
+test("redirects only existing index pages to local canonical URLs and preserves queries", async (context) => {
+  const { port } = await fixture(context);
+
+  for (const [requested, canonical] of [
+    ["/index.html?from=search&term=a%20b", "/?from=search&term=a%20b"],
+    ["/solutions/local-ai/index.html?source=mail", "/solutions/local-ai/?source=mail"],
+    ["/solutions/local-ai/%69ndex.html", "/solutions/local-ai/"],
+    ["/%2fsolutions/local-ai/index.html", "/solutions/local-ai/"],
+  ]) {
+    const response = await exchange(port, { path: requested });
+
+    assert.equal(response.status, 301, requested);
+    assert.equal(response.headers.location, canonical);
+    assert.equal(response.text, "");
+    assert.equal(response.headers["cache-control"], "no-cache");
+  }
+
+  for (const pathname of ["/missing/index.html", "/assets/index.html", "/assets"]) {
+    const response = await exchange(port, { path: pathname });
+
+    assert.equal(response.status, 404, pathname);
+    assert.equal(response.headers.location, undefined);
+  }
+});
+
+test("caches images and fonts while HTML, scripts, styles and crawler files revalidate", async (context) => {
+  const { port } = await fixture(context);
+
+  for (const [pathname, expected] of [
+    ["/", "no-cache"],
+    ["/styles.css", "public, max-age=0, must-revalidate"],
+    ["/app.js", "public, max-age=0, must-revalidate"],
+    ["/favicon.svg", "public, max-age=86400"],
+    ["/assets/security/backup.png", "public, max-age=86400"],
+    ["/assets/fonts/ys-text-regular.woff2", "public, max-age=86400"],
+    ["/robots.txt", "no-cache"],
+    ["/sitemap.xml", "no-cache"],
+  ]) {
+    const response = await exchange(port, { path: pathname, method: "HEAD" });
+    const cached = await exchange(port, { path: pathname, headers: { "If-None-Match": response.headers.etag } });
+
+    assert.equal(response.status, 200, pathname);
+    assert.equal(response.headers["cache-control"], expected, pathname);
+    assert.ok(response.headers.etag, pathname);
+    assert.equal(response.text, "");
+    assert.equal(cached.status, 304, pathname);
+    assert.equal(cached.headers.etag, response.headers.etag);
+    assert.equal(cached.headers["cache-control"], expected);
+    assert.equal(cached.headers["content-length"], undefined);
+    assert.equal(cached.text, "");
+  }
+});
+
+test("ETag revalidation handles weak comparison and detects same-size same-time changes", async (context) => {
+  const directory = await mkdtemp(fileURLToPath(new URL("../dist/http-test-", import.meta.url)));
+  const filename = path.join(directory, "style.css");
+  const pathname = "/" + path.basename(directory) + "/style.css";
+
+  await writeFile(filename, "body{color:red}");
+  context.after(async () => {
+    await unlink(filename);
+    await rmdir(directory);
+  });
+
+  const originalInfo = await stat(filename);
+  const { port } = await fixture(context);
+  const original = await exchange(port, { path: pathname });
+  const etag = original.headers.etag;
+
+  assert.ok(etag);
+
+  for (const condition of [etag, etag.replace(/^W\//, ""), '"old", ' + etag, "*"]) {
+    for (const method of ["GET", "HEAD"]) {
+      const cached = await exchange(port, { path: pathname, method, headers: { "If-None-Match": condition } });
+
+      assert.equal(cached.status, 304);
+      assert.equal(cached.text, "");
+    }
+  }
+
+  const unmatched = await exchange(port, { path: pathname, headers: { "If-None-Match": 'W/"old"' } });
+  const missing = await exchange(port, { path: pathname + ".missing", headers: { "If-None-Match": "*" } });
+
+  assert.equal(unmatched.status, 200);
+  assert.equal(missing.status, 404);
+  assert.equal(missing.headers.etag, undefined);
+
+  await writeFile(filename, "body{color:tan}");
+  await utimes(filename, originalInfo.atime, originalInfo.mtime);
+
+  const updated = await exchange(port, { path: pathname, headers: { "If-None-Match": etag } });
+
+  assert.equal(updated.status, 200);
+  assert.equal(updated.text, "body{color:tan}");
+  assert.notEqual(updated.headers.etag, etag);
+  assert.equal(updated.headers["content-length"], original.headers["content-length"]);
 });
 
 test("accepts the API request and sends only the server-generated message", async (context) => {
@@ -189,6 +292,8 @@ test("unconfigured delivery returns 503 without attempting to send", async (cont
   const response = await post(app.port);
 
   assert.equal(response.status, 503);
+  assert.equal(response.headers["cache-control"], "no-store");
+  assert.equal(response.headers.etag, undefined);
   assert.equal(attempts, 0);
   assert.equal(JSON.parse(response.text).ok, undefined);
   assert.match(JSON.parse(response.text).error, /временно недоступна/);
@@ -240,6 +345,8 @@ test("rejects foreign, forged and cross-site origins before invoking delivery", 
     });
 
     assert.equal(response.status, 403);
+    assert.equal(response.headers["cache-control"], "no-store");
+    assert.equal(response.headers.etag, undefined);
   }
 
   assert.equal(app.messages.length, 0);

@@ -38,6 +38,7 @@ export const services = [
     title: "Корпоративная почта",
     product: "Mailu",
     logo: "mailu.png",
+    page: "/services/mailu/",
     category: "communication",
     description:
       "Почта на вашем домене с веб-интерфейсом и защитой от спама без платы за ящики.",
@@ -54,6 +55,7 @@ export const services = [
     title: "Файлы и календари",
     product: "Nextcloud",
     logo: "nextcloud.svg",
+    page: "/services/nextcloud/",
     category: "work",
     description:
       "Общие папки, файлы и календари с доступом с компьютера и телефона.",
@@ -70,6 +72,7 @@ export const services = [
     title: "Совместные документы",
     product: "ONLYOFFICE Docs Community",
     logo: "onlyoffice.svg",
+    page: "/services/onlyoffice/",
     category: "work",
     description:
       "Документы, таблицы и презентации с совместным редактированием в браузере.",
@@ -77,7 +80,7 @@ export const services = [
     detail:
       "Подключим офисный редактор к вашему файловому пространству. Сотрудники смогут вместе работать с документами, таблицами и презентациями в браузере. Совместимость важных файлов проверим на ваших примерах.",
     limitation:
-      "Community Edition ограничена 20 одновременными соединениями редактирования и рекомендуется для команд до 20 пользователей. Для большего масштаба или SLA нужна коммерческая редакция.",
+      "С версии 9.4 в Community снят лимит 20 одновременных соединений. Разработчик рекомендует эту редакцию для небольших команд; производительность проверяем на вашем сервере. Поддержка разработчика и часть корпоративных возможностей доступны в коммерческой редакции.",
     url: "https://www.onlyoffice.com/compare-editions",
     license: "GNU AGPLv3 для Community Edition",
   },
@@ -115,6 +118,7 @@ export const services = [
   },
   {
     id: "crm",
+    page: "/services/espocrm/",
     title: "CRM",
     product: "EspoCRM",
     logo: "crm.png",

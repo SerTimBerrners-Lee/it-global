@@ -1,4 +1,5 @@
 import http from "node:http";
+import { createHash } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import { isIP } from "node:net";
 import path from "node:path";
@@ -11,10 +12,28 @@ const mimeTypes = {
   ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8", ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg", ".webp": "image/webp", ".ico": "image/x-icon",
+  ".jpeg": "image/jpeg", ".webp": "image/webp", ".avif": "image/avif", ".ico": "image/x-icon",
   ".woff": "font/woff", ".woff2": "font/woff2", ".xml": "application/xml; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
 };
+
+/** @param {string} extension @returns {string} */
+function cacheControl(extension) {
+  if ([".css", ".js"].includes(extension)) return "public, max-age=0, must-revalidate";
+  if ([".svg", ".png", ".jpg", ".jpeg", ".webp", ".avif", ".ico", ".woff", ".woff2"].includes(extension)) {
+    return "public, max-age=86400";
+  }
+
+  return "no-cache";
+}
+
+/** @param {string | undefined} condition @param {string} etag @returns {boolean} */
+function matchesEtag(condition, etag) {
+  if (!condition) return false;
+  if (condition.trim() === "*") return true;
+
+  return condition.split(",").some((value) => value.trim().replace(/^W\//, "") === etag.slice(2));
+}
 
 /** @param {http.ServerResponse} response @param {number} status @param {object} data @returns {void} */
 function json(response, status, data) {
@@ -96,22 +115,46 @@ async function serveFile(request, response, url) {
   }
 
   try {
-    const info = await stat(filename);
+    let info = await stat(filename);
+    const directory = info.isDirectory();
 
-    if (info.isDirectory()) {
-      if (!url.pathname.endsWith("/")) {
-        response.writeHead(301, { Location: url.pathname + "/" + url.search });
-        response.end();
-        return;
-      }
-
+    if (directory) {
       filename = path.join(filename, "index.html");
+      info = await stat(filename);
+    }
+
+    if (!info.isFile()) {
+      json(response, 404, { error: "Страница не найдена." });
+      return;
+    }
+
+    if ((directory && !url.pathname.endsWith("/")) || (!directory && path.basename(filename) === "index.html")) {
+      const relative = path.relative(publicDirectory, path.dirname(filename));
+      const segments = relative.split(path.sep).filter(Boolean).map(encodeURIComponent);
+      const canonicalPath = "/" + (segments.length ? segments.join("/") + "/" : "");
+
+      response.writeHead(301, { Location: canonicalPath + url.search });
+      response.end();
+      return;
     }
 
     const body = await readFile(filename);
+    const extension = path.extname(filename).toLowerCase();
+    // A content digest also changes when a deployment preserves file size and timestamps.
+    // Weak comparison remains valid when the reverse proxy compresses the response.
+    const etag = 'W/"' + createHash("sha256").update(body).digest("hex") + '"';
+
+    response.setHeader("Cache-Control", cacheControl(extension));
+    response.setHeader("ETag", etag);
+
+    if (matchesEtag(request.headers["if-none-match"], etag)) {
+      response.writeHead(304);
+      response.end();
+      return;
+    }
 
     response.writeHead(200, {
-      "Content-Type": mimeTypes[path.extname(filename)] || "application/octet-stream",
+      "Content-Type": mimeTypes[extension] || "application/octet-stream",
       "Content-Length": body.length,
     });
     response.end(request.method === "HEAD" ? undefined : body);

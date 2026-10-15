@@ -1,3 +1,5 @@
+import { trackGoal } from "./analytics.js";
+
 /**
  * @param {() => string[]} getSelected
  * @param {() => {before: number, plan: string, needsVds: boolean}} getCalculation
@@ -62,6 +64,7 @@ export function initializeRequestForm(getSelected, getCalculation) {
 
       status.dataset.state = "success";
       status.textContent = "Заявка отправлена. Свяжемся с вами по указанному телефону.";
+      trackGoal("request_sent");
     } catch (error) {
       status.dataset.state = "error";
       status.textContent = error instanceof Error && error.name === "Error"

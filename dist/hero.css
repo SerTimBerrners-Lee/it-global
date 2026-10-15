@@ -11,6 +11,10 @@
 .hero-app--jitsi{--float-duration:9.5s;--float-delay:-3s;--app-logo:url('./assets/logos/jitsi.svg');--app-color:#609ad2;left:25%;bottom:24px;width:98px;border-radius:26px;transform:perspective(500px) rotateY(-10deg) rotate(16deg)}
 .hero-app--penpot{--float-duration:7.5s;--float-delay:-5s;--float-x:-4px;--app-logo:url('./assets/logos/penpot.svg');--app-color:#34343c;right:25%;bottom:20px;width:92px;border-radius:24px;transform:perspective(500px) rotateY(14deg) rotate(-9deg)}
 #hero-tagline{display:flex;align-items:center;justify-content:center;text-wrap:balance}
+.hero-copy h1{max-width:1000px;margin-inline:auto;font-size:52px;line-height:56px;text-wrap:balance}
+@media(min-width:1504px){.hero-copy h1{font-size:60px;line-height:64px}}
+@media(max-width:850px){.hero-copy h1{padding-inline:24px;font-size:40px;line-height:44px}}
+@media(max-width:540px){.hero-shell{height:auto;min-height:680px}.hero-copy{position:relative;top:auto;margin-top:106px;padding-bottom:32px}.hero-copy h1{padding-inline:0;font-size:32px;line-height:36px}}
 
 @media(min-width:1504px){.hero-app--nextcloud{top:220px}.hero-app--onlyoffice{top:214px}}
 @media(max-width:1100px){.hero-app--nextcloud{left:4%;width:108px}.hero-app--onlyoffice{right:4%;width:112px}.hero-app--bookstack,.hero-app--mail{width:112px}}
