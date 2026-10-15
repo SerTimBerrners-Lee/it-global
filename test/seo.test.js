@@ -41,12 +41,12 @@ test("the delivered homepage contains every catalog product before JavaScript ru
   assert.ok(links.includes("/services/cloud-migration/"));
 });
 
-test("the sitemap contains the homepage and all twelve generated destination pages", async () => {
+test("the sitemap contains the homepage and all twenty-one generated destination pages", async () => {
   const sitemap = await readFile(path.join(dist, "sitemap.xml"), "utf8");
   const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => decode(match[1]));
   const expected = routes.map((route) => new URL(route, site.url).href);
 
-  assert.equal(routes.length, 13);
+  assert.equal(routes.length, 22);
   assert.equal(new Set(urls).size, urls.length);
   assert.deepEqual(urls.sort(), expected.sort());
   assert.match(await readFile(path.join(dist, "robots.txt"), "utf8"), new RegExp(`Sitemap: ${site.url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/sitemap\\.xml`));

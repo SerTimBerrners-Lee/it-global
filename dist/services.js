@@ -103,6 +103,7 @@ export const services = [
   },
   {
     id: "tasks",
+    page: "/services/huly/",
     title: "Задачи и проекты",
     product: "Huly",
     logo: "tasks.png",
@@ -136,6 +137,7 @@ export const services = [
   },
   {
     id: "knowledge",
+    page: "/services/bookstack/",
     title: "База знаний",
     product: "BookStack",
     logo: "bookstack.svg",
@@ -152,6 +154,7 @@ export const services = [
   },
   {
     id: "erp",
+    page: "/services/erpnext/",
     title: "ERP и учёт",
     product: "ERPNext",
     logo: "erpnext.svg",
@@ -168,6 +171,7 @@ export const services = [
   },
   {
     id: "chat",
+    page: "/services/zulip/",
     title: "Командный чат",
     product: "Zulip",
     logo: "zulip.svg",
@@ -217,6 +221,7 @@ export const services = [
   },
   {
     id: "support",
+    page: "/services/chatwoot/",
     title: "Общение с клиентами",
     product: "Chatwoot Community",
     logo: "chatwoot.svg",
@@ -232,6 +237,7 @@ export const services = [
   },
   {
     id: "automation",
+    page: "/services/activepieces/",
     title: "Автоматизация процессов",
     product: "Activepieces Community",
     logo: "automation.png",
@@ -248,6 +254,7 @@ export const services = [
   },
   {
     id: "analytics",
+    page: "/services/matomo/",
     title: "Аналитика сайта",
     product: "Matomo",
     logo: "matomo.svg",
@@ -264,6 +271,7 @@ export const services = [
   },
   {
     id: "marketing",
+    page: "/services/mautic/",
     title: "Рассылки и маркетинг",
     product: "Mautic",
     logo: "mautic.svg",
@@ -279,6 +287,7 @@ export const services = [
   },
   {
     id: "design",
+    page: "/services/penpot/",
     title: "Совместный дизайн",
     product: "Penpot",
     logo: "penpot.svg",

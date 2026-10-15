@@ -1,0 +1,110 @@
+[
+  {
+    "file": "huly-interface.jpg",
+    "author": "Huly",
+    "sourcePage": "https://huly.io/",
+    "originalUrl": "https://huly.io/_next/static/media/hero-illustration.7100a376.jpg",
+    "retrieved": "2026-10-15",
+    "width": 2048,
+    "height": 1138,
+    "originalSha256": "64ce88c062dfecc08a7609356a7bdb12c0f86569e8244c2ee285dadcf1504930",
+    "publishedSha256": "64ce88c062dfecc08a7609356a7bdb12c0f86569e8244c2ee285dadcf1504930",
+    "conversion": "Original file unchanged"
+  },
+  {
+    "file": "bookstack-interface.webp",
+    "author": "BookStack",
+    "sourcePage": "https://www.bookstackapp.com/",
+    "originalUrl": "https://www.bookstackapp.com/images/bookstack-hero-screenshot.webp",
+    "retrieved": "2026-10-15",
+    "width": 1824,
+    "height": 996,
+    "originalSha256": "0e05bfd4bf44d505c86e826d8900136e3147d4bd2ab5a051d740af7a74523562",
+    "publishedSha256": "0e05bfd4bf44d505c86e826d8900136e3147d4bd2ab5a051d740af7a74523562",
+    "conversion": "Original file unchanged"
+  },
+  {
+    "file": "erpnext-interface.webp",
+    "author": "Frappe / ERPNext",
+    "sourcePage": "https://github.com/frappe/erpnext",
+    "originalUrl": "https://raw.githubusercontent.com/frappe/erpnext/develop/erpnext/public/images/v16/hero_image.png",
+    "retrieved": "2026-10-15",
+    "width": 3104,
+    "height": 1974,
+    "originalSha256": "baf441869dafcf9f0511c2953fa7b81d88b05cdd41f50a522134f093662ee20b",
+    "publishedSha256": "288eea1485e4c8a8c8a4753e40b2354225c6d4c42ae201a7228646ac18d3bdf8",
+    "conversion": "PNG to lossless WebP; decoded RGBA pixels verified identical"
+  },
+  {
+    "file": "zulip-interface.jpg",
+    "author": "Zulip",
+    "sourcePage": "https://zulip.com/",
+    "originalUrl": "https://static.zulipchat.com/static/images/landing-page/hello/generated/screen-1-2x.jpg",
+    "retrieved": "2026-10-15",
+    "width": 2190,
+    "height": 992,
+    "originalSha256": "6e82d9ce4afe2a23d06594bd75ed5772ff4cd102a91cf00685ccdc0a1732ba00",
+    "publishedSha256": "6e82d9ce4afe2a23d06594bd75ed5772ff4cd102a91cf00685ccdc0a1732ba00",
+    "conversion": "Original file unchanged"
+  },
+  {
+    "file": "chatwoot-interface.webp",
+    "author": "Chatwoot",
+    "sourcePage": "https://github.com/chatwoot/chatwoot",
+    "originalUrl": "https://raw.githubusercontent.com/chatwoot/chatwoot/develop/.github/screenshots/dashboard.png",
+    "retrieved": "2026-10-15",
+    "width": 2880,
+    "height": 1554,
+    "originalSha256": "593ff252f0692a4bd3b0a7ce60aeb050c37fa3f0733501d635540e9469cd5ce3",
+    "publishedSha256": "d75e120dcaec169b3f66ae4a3f7f7b54ec3f854b820e52e8efb06cebcf00973e",
+    "conversion": "PNG to lossless WebP; decoded RGBA pixels verified identical"
+  },
+  {
+    "file": "activepieces-interface.webp",
+    "author": "Activepieces",
+    "sourcePage": "https://github.com/activepieces/activepieces/blob/main/docs/resources/screenshots/flow-history.png",
+    "originalUrl": "https://raw.githubusercontent.com/activepieces/activepieces/main/docs/resources/screenshots/flow-history.png",
+    "retrieved": "2026-10-15",
+    "width": 1415,
+    "height": 892,
+    "originalSha256": "00ed3fc00263e5571a7212dcc40d9bc8f304876803246b4c8f2fabf9c18cd729",
+    "publishedSha256": "fb86e58254374df923aff3b919102f56336db1750cefe70d1122e3b72fff209f",
+    "conversion": "PNG to lossless WebP; decoded RGBA pixels verified identical"
+  },
+  {
+    "file": "matomo-interface.webp",
+    "author": "Matomo",
+    "sourcePage": "https://matomo.org/",
+    "originalUrl": "https://matomo.org/wp-content/uploads/2026/04/mockup_matomo-dashboard-2026.webp",
+    "retrieved": "2026-10-15",
+    "width": 2048,
+    "height": 1292,
+    "originalSha256": "589757ba342a47a11d4d820a25fceb4211030d9913b17a6d51a01664542b4651",
+    "publishedSha256": "589757ba342a47a11d4d820a25fceb4211030d9913b17a6d51a01664542b4651",
+    "conversion": "Original file unchanged"
+  },
+  {
+    "file": "mautic-interface.webp",
+    "author": "Mautic",
+    "sourcePage": "https://github.com/mautic/user-documentation/blob/7.2/docs/builders/images/editoroverview.png",
+    "originalUrl": "https://raw.githubusercontent.com/mautic/user-documentation/7.2/docs/builders/images/editoroverview.png",
+    "retrieved": "2026-10-15",
+    "width": 1058,
+    "height": 944,
+    "originalSha256": "039aa3598efa35c6837d5b2581f927a81b72a42e71d293cab3517fb7116e50a1",
+    "publishedSha256": "54d75af7881a7eba35a9449eca64df9f047c1c65b2c8813b8e89e4eca67374d8",
+    "conversion": "PNG to lossless WebP; decoded RGBA pixels verified identical"
+  },
+  {
+    "file": "penpot-interface.webp",
+    "author": "Penpot",
+    "sourcePage": "https://penpot.app/",
+    "originalUrl": "https://img.plasmic.app/img-optimizer/v1/img?src=https%3A%2F%2Fimg.plasmic.app%2Fimg-optimizer%2Fv1%2Fimg%2F99d5e386adcf2596aeab5334b0eafe6e.webp&q=75",
+    "retrieved": "2026-10-15",
+    "width": 3840,
+    "height": 2304,
+    "originalSha256": "f4cd1af2700eea631976b962cf3e55193da939d19f9fe373e386ab0eda165550",
+    "publishedSha256": "f224a9cec23f7e3c5b576127766c003c23676bf3c2a76a0cfb3776f43c8a5249",
+    "conversion": "PNG to lossless WebP; decoded RGBA pixels verified identical"
+  }
+]
