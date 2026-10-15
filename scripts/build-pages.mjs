@@ -6,7 +6,8 @@ import { serviceCard } from "../dist/catalog.js";
 
 /** @typedef {{title: string, text: string}} Item */
 /** @typedef {{question: string, answer: string}} Question */
-/** @typedef {{slug: string, navTitle: string, title: string, description: string, heading: string, intro: string, visual: string, outputTitle: string, outputText: string, useCaseHeading: string, useCases: Item[], process: Item[], requirementsHeading: string, requirements: Item[], faq: Question[], requestText: string, section?: 'solutions' | 'services', requestServiceId?: string | null, sources?: {title: string, url: string}[]}} Solution */
+/** @typedef {{src: string, width: number, height: number, alt: string, caption: string, author: string, sourceUrl: string, license?: {name: string, url: string}}} Preview */
+/** @typedef {{slug: string, navTitle: string, title: string, description: string, heading: string, intro: string, visual: string, outputTitle: string, outputText: string, useCaseHeading: string, useCases: Item[], process: Item[], requirementsHeading: string, requirements: Item[], faq: Question[], requestText: string, section?: 'solutions' | 'services', requestServiceId?: string | null, sources?: {title: string, url: string}[], preview?: Preview, previewServices?: string[]}} Solution */
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const dist = path.join(root, "dist");
@@ -81,6 +82,14 @@ function cards(items) {
   return items.map((item) => `<article class="solution-card"><h3>${escape(item.title)}</h3><p>${escape(item.text)}</p></article>`).join("\n");
 }
 
+/** @param {Preview} preview @param {boolean} [lazy] @returns {string} */
+function screenshot(preview, lazy = false) {
+  return `<figure class="solution-preview">
+<a class="preview-image" href="${escape(preview.src)}" target="_blank" rel="noopener" aria-label="Увеличить: ${escape(preview.alt)}"><img src="${escape(preview.src)}" width="${preview.width}" height="${preview.height}" alt="${escape(preview.alt)}" ${lazy ? 'loading="lazy"' : 'fetchpriority="high"'} decoding="async"></a>
+<figcaption><span>${escape(preview.caption)}</span><span class="preview-credit">Источник: <a href="${escape(preview.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escape(preview.author)}</a>${preview.license ? ` · <a href="${escape(preview.license.url)}" target="_blank" rel="noopener noreferrer">${escape(preview.license.name)}</a>` : ""}</span></figcaption>
+</figure>`;
+}
+
 /** @param {Solution} page @returns {string} */
 function renderPage(page) {
   const isService = page.section === "services";
@@ -96,6 +105,7 @@ function renderPage(page) {
   const symbol = isService
     ? service ? `<img src="/assets/logos/${escape(service.logo)}" alt="" width="88" height="88">` : '<div class="demo-services" aria-hidden="true"><img src="/assets/logos/mailu.png" alt="" width="64" height="64"><img src="/assets/logos/nextcloud.svg" alt="" width="64" height="64"><img src="/assets/logos/onlyoffice.svg" alt="" width="64" height="64"></div>'
     : page.visual === "speech" || page.visual === "transcription" ? '<span class="demo-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>' : '<img src="/assets/logos/ollama.svg" alt="" width="72" height="72">';
+  const gallery = (page.previewServices || []).map((slug) => servicePages.find((item) => item.slug === slug)?.preview).filter((preview) => preview !== undefined);
 
   return `<!doctype html>
 <html lang="ru">
@@ -128,14 +138,14 @@ ${breadcrumbData}
 <nav class="breadcrumbs container" aria-label="Хлебные крошки">${breadcrumbs.map((item, index) => index === breadcrumbs.length - 1 ? `<span aria-current="page">${escape(item.name)}</span>` : `<a href="${item.path}">${escape(item.name)}</a><span aria-hidden="true">/</span>`).join("")}</nav>
 <section class="solution-hero container" aria-labelledby="solution-title">
 <div class="solution-copy"><h1 id="solution-title">${escape(page.heading)}</h1><p>${escape(page.intro)}</p><a class="button primary" href="${escape(request)}">${isService ? "Обсудить внедрение" : "Подобрать модель под задачу"}</a><span class="solution-hero-note">На вашем сервере. С настройкой и годом поддержки.</span></div>
-<div class="solution-demo solution-demo-${escape(page.visual)}" aria-label="Иллюстрация сценария">
+${page.preview ? screenshot(page.preview) : `<div class="solution-demo solution-demo-${escape(page.visual)}" aria-label="Иллюстрация сценария">
 <div class="demo-top"><span class="demo-status" aria-hidden="true"></span>На вашем сервере</div>
 <div class="demo-symbol" aria-hidden="true">${symbol}</div>
 <div class="demo-result"><h2>${escape(page.outputTitle)}</h2><p>${escape(page.outputText)}</p></div><p class="demo-caption">${isService ? "Сценарий использования" : "Пример результата"}</p>
-</div>
+</div>`}
 </section>
 </div>
-<section class="solution-section container" aria-labelledby="use-cases"><h2 id="use-cases">${escape(page.useCaseHeading)}</h2><div class="solution-cards">${cards(page.useCases)}</div></section>
+${gallery.length ? `<section class="solution-section container" aria-labelledby="interfaces"><h2 id="interfaces">Как выглядят сервисы после перехода</h2><div class="preview-gallery">${gallery.map((preview) => screenshot(preview, true)).join("\n")}</div></section>\n` : ""}<section class="solution-section container" aria-labelledby="use-cases"><h2 id="use-cases">${escape(page.useCaseHeading)}</h2><div class="solution-cards">${cards(page.useCases)}</div></section>
 <section class="solution-section solution-process container" aria-labelledby="process"><h2 id="process">Что сделаем для запуска</h2><div class="solution-cards">${cards(page.process)}</div></section>
 <section class="solution-section container" aria-labelledby="requirements"><h2 id="requirements">${escape(page.requirementsHeading)}</h2><div class="solution-cards">${cards(page.requirements)}</div></section>
 <section class="solution-offer container" aria-labelledby="offer"><div><h2 id="offer">Разовое внедрение, год поддержки</h2><p>Один сервис за 9 900 ₽ или весь набор за 49 900 ₽. ${isService ? "Настроим выбранные сервисы и передадим доступы вашей команде." : "Подберём модель, настроим запуск и передадим доступы вашей команде."}</p><p>Оборудование и аренда сервера оплачиваются отдельно. ${isService ? "Коммерческие дополнения, лицензии и дополнительные работы согласуем отдельно." : "Требования к памяти и видеокарте зависят от модели и нагрузки."} Состав работ согласуем до внедрения.</p></div><a class="button primary" href="${escape(request)}">Подготовить заявку</a></section>

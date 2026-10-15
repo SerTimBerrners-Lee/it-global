@@ -86,7 +86,16 @@
         "title": "Настройка домена для Mailu",
         "url": "https://mailu.io/2024.06/dns.html"
       }
-    ]
+    ],
+    "preview": {
+      "src": "/assets/previews/mailu-create-user.png",
+      "width": 942,
+      "height": 410,
+      "alt": "Mailu: создание почтового ящика в панели администратора",
+      "caption": "Mailu: управление почтовыми ящиками",
+      "author": "Mailu",
+      "sourceUrl": "https://mailu.io/2024.06/features.html"
+    }
   },
   {
     "slug": "nextcloud",
@@ -179,7 +188,20 @@
         "title": "Условия Nextcloud для крупных инсталляций",
         "url": "https://nextcloud.com/fairusepolicy/"
       }
-    ]
+    ],
+    "preview": {
+      "src": "/assets/business/nextcloud-files.webp",
+      "width": 1750,
+      "height": 1000,
+      "alt": "Nextcloud: общие файлы, права доступа и мобильное приложение",
+      "caption": "Nextcloud: файлы и общий доступ",
+      "author": "Nextcloud contributors",
+      "sourceUrl": "https://github.com/nextcloud/screenshots/blob/master/nextcloud-hub-25-files.png",
+      "license": {
+        "name": "CC BY-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    }
   },
   {
     "slug": "onlyoffice",
@@ -268,7 +290,20 @@
         "title": "Условия и ограничения Docs Community",
         "url": "https://helpcenter.onlyoffice.com/docs/faq/docs-community.aspx"
       }
-    ]
+    ],
+    "preview": {
+      "src": "/assets/previews/onlyoffice-document-en.png",
+      "width": 1236,
+      "height": 707,
+      "alt": "ONLYOFFICE Docs: редактор документов из официальной справки",
+      "caption": "ONLYOFFICE Docs: редактор документов",
+      "author": "ONLYOFFICE / Ascensio System SIA",
+      "sourceUrl": "https://github.com/ONLYOFFICE/web-apps/blob/9c0ca538c3b211052347df09d2a4d6781f023403/apps/documenteditor/main/resources/help/en/images/interface/editorwindow.png",
+      "license": {
+        "name": "CC BY-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    }
   },
   {
     "slug": "espocrm",
@@ -361,7 +396,16 @@
         "title": "Официальные расширения EspoCRM",
         "url": "https://www.espocrm.com/extensions/"
       }
-    ]
+    ],
+    "preview": {
+      "src": "/assets/business/espo-crm.webp",
+      "width": 940,
+      "height": 738,
+      "alt": "EspoCRM: рабочая панель со сделками, обращениями и календарём",
+      "caption": "EspoCRM: рабочая панель команды",
+      "author": "EspoCRM",
+      "sourceUrl": "https://www.espocrm.com/download/"
+    }
   },
   {
     "slug": "cloud-migration",
@@ -450,6 +494,11 @@
         "title": "Экспорт писем, контактов и календарей Outlook",
         "url": "https://support.microsoft.com/en-us/outlook/export-emails-contacts-and-calendar-items-to-outlook-using-a-pst-file"
       }
+    ],
+    "previewServices": [
+      "mailu",
+      "nextcloud",
+      "onlyoffice"
     ]
   }
 ]
