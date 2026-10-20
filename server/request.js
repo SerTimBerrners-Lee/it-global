@@ -28,8 +28,8 @@ function isRecord(value) {
   return prototype === Object.prototype || prototype === null;
 }
 
-/** @param {unknown} value @returns {RequestData} */
-export function validateRequest(value) {
+/** @param {unknown} value @returns {{name: string, phone: string, message: string}} */
+export function validateContact(value) {
   if (!isRecord(value)) {
     throw new RequestError("Не удалось прочитать заявку. Попробуйте ещё раз.");
   }
@@ -66,6 +66,15 @@ export function validateRequest(value) {
     throw new RequestError("Описание задачи должно содержать не больше 3000 символов.");
   }
 
+  return { name: value.name.trim(), phone, message: message.trim() };
+}
+
+/** @param {unknown} value @returns {RequestData} */
+export function validateRequest(value) {
+  const contact = validateContact(value);
+
+  if (!isRecord(value)) throw new RequestError("Не удалось прочитать заявку.");
+
   if (!Array.isArray(value.serviceIds) || value.serviceIds.length > services.length) {
     throw new RequestError("Проверьте список выбранных сервисов.");
   }
@@ -96,9 +105,7 @@ export function validateRequest(value) {
   }
 
   return {
-    name: value.name.trim(),
-    phone,
-    message: message.trim(),
+    ...contact,
     serviceIds,
     calculation: {
       current: calculation.current,

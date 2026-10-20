@@ -8,6 +8,46 @@ import { createApp } from "../server/server.js";
 
 const origin = "https://its-global.ru";
 
+test("AI form reaches the mail sender with its own offer and server-resolved service names", async (context) => {
+  const { port, messages } = await fixture(context);
+  const response = await post(port, {
+    kind: "ai", name: "Тест", phone: "+7 999 123-45-67", company: "Тестовый завод",
+    message: "Найти инструкции", serviceIds: ["knowledge", "training"], deployment: "local",
+    price: 9900, recipient: "attacker@example.com",
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(messages.length, 1);
+  assert.match(messages[0].text, /Тестовый завод/);
+  assert.match(messages[0].text, /Помощник по документам/);
+  assert.match(messages[0].text, /Обучение сотрудников/);
+  assert.doesNotMatch(messages[0].text, /9 900|9900|attacker/);
+});
+
+test("invalid AI services never reach the mail sender", async (context) => {
+  const { port, messages } = await fixture(context);
+  const response = await post(port, {
+    kind: "ai", name: "Тест", phone: "+7 999 123-45-67",
+    serviceIds: ["mail"], deployment: "local",
+  });
+
+  assert.equal(response.status, 400);
+  assert.equal(messages.length, 0);
+});
+
+test("AI requests report unavailable mail without claiming delivery", async (context) => {
+  const { port, messages } = await fixture(context, {
+    sender: { ready: false, /** @returns {Promise<void>} */ async send() { assert.fail("Must not send"); } },
+  });
+  const response = await post(port, {
+    kind: "ai", name: "Тест", phone: "+7 999 123-45-67",
+    serviceIds: [], deployment: "undecided",
+  });
+
+  assert.equal(response.status, 503);
+  assert.equal(messages.length, 0);
+});
+
 /** @returns {import('../server/request.js').RequestData} */
 function validRequest() {
   return {

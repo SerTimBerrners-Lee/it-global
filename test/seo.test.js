@@ -10,7 +10,7 @@ const dist = path.join(root, "dist");
 const site = JSON.parse(await readFile(path.join(root, "content/site.json"), "utf8"));
 const aiPages = JSON.parse(await readFile(path.join(root, "content/solutions.json"), "utf8"));
 const servicePages = JSON.parse(await readFile(path.join(root, "content/services-pages.json"), "utf8"));
-const routes = ["/", ...aiPages.map((page) => `/solutions/${page.slug}/`), ...servicePages.map((page) => `/services/${page.slug}/`)];
+const routes = ["/", "/ai/", ...aiPages.map((page) => `/solutions/${page.slug}/`), ...servicePages.map((page) => `/services/${page.slug}/`)];
 const pages = new Map(await Promise.all(routes.map(async (route) => [route, await readFile(path.join(dist, route, "index.html"), "utf8")])));
 
 /** @param {string} value @returns {string} */
@@ -41,12 +41,23 @@ test("the delivered homepage contains every catalog product before JavaScript ru
   assert.ok(links.includes("/services/cloud-migration/"));
 });
 
-test("the sitemap contains the homepage and all twenty-one generated destination pages", async () => {
+test("AI page contains the complete service catalog and clear demo labels before JavaScript", () => {
+  const html = pages.get("/ai/");
+  const cards = attributes(html, "article").filter((item) => item["data-service"]);
+
+  assert.equal(cards.length, 9);
+  assert.equal(new Set(cards.map((card) => card["data-service"])).size, 9);
+  assert.match(html, /Условный пример/);
+  assert.match(html, /не являются нашими тарифами/);
+  assert.doesNotMatch(html, /\u2014/);
+});
+
+test("the sitemap contains the homepage, AI site and all generated destination pages", async () => {
   const sitemap = await readFile(path.join(dist, "sitemap.xml"), "utf8");
   const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => decode(match[1]));
   const expected = routes.map((route) => new URL(route, site.url).href);
 
-  assert.equal(routes.length, 22);
+  assert.equal(routes.length, 23);
   assert.equal(new Set(urls).size, urls.length);
   assert.deepEqual(urls.sort(), expected.sort());
   assert.match(await readFile(path.join(dist, "robots.txt"), "utf8"), new RegExp(`Sitemap: ${site.url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/sitemap\\.xml`));
