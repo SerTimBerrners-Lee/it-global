@@ -1,317 +1,334 @@
-import { aiServices } from "./catalog.js";
-import { calculateEffect } from "./effect.js";
+import { services, serviceCard } from "./services.js";
+import { initializeCalculator } from "./calculator-ui.js";
+import { initializeHero } from "./hero.js";
+import { initializeRequestForm } from "./request-form.js";
 import { trackGoal } from "../analytics.js";
 
-/** @param {string} selector @returns {HTMLElement} */
-function element(selector) {
-  const found = document.querySelector(selector);
+/** @type {(selector: string) => Element | null} */
+const $ = (selector) => document.querySelector(selector);
 
-  if (!(found instanceof HTMLElement)) throw new Error(`Missing element: ${selector}`);
+/** @type {(selector: string) => Element[]} */
+const $$ = (selector) => [...document.querySelectorAll(selector)];
 
-  return found;
-}
+const selected = restoreSelection();
 
-/** @param {string} selector @returns {HTMLInputElement} */
-function input(selector) {
-  const found = document.querySelector(selector);
+/** @type {import('../services.js').Service | undefined} */
+let activeService;
 
-  if (!(found instanceof HTMLInputElement)) throw new Error(`Missing input: ${selector}`);
+let category = "all";
 
-  return found;
-}
+let pageCategory = "all";
 
-const storageKey = "it-global-ai-services";
-const allowed = new Set(aiServices.map((service) => service.id));
-const selected = new Set();
-let sending = false;
+let search = "";
 
-try {
-  const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
+/** @type {Element | null | undefined} */
+let previousOpener;
 
-  if (Array.isArray(saved)) {
-    for (const id of saved) {
-      if (allowed.has(id)) selected.add(id);
-    }
-  }
-} catch {
-  // Selection remains available without persistent storage.
+/** @param {string} id @param {Element} [opener] @returns {void} */
+function openDialog(id, opener) {
+  if (!$("dialog[open]")) previousOpener = opener || document.activeElement;
+
+  $$("dialog[open]").forEach((dialog) => dialog.close());
+  closeMenu();
+  $(id).showModal();
+
+  if (id === "#request-dialog") trackGoal("request_open");
 }
 
 /** @returns {void} */
-function renderSelection() {
-  for (const button of document.querySelectorAll("[data-select]")) {
-    const active = selected.has(button.getAttribute("data-select"));
+function closeMenu() {
+  $("#mobile-nav").hidden = true;
+  $(".menu-toggle").setAttribute("aria-expanded", "false");
+  $(".menu-toggle").setAttribute("aria-label", "Открыть меню");
+}
 
-    button.setAttribute("aria-pressed", String(active));
-    button.textContent = active ? "✓ В заявке" : "+ Включить в заявку";
-  }
-
-  for (const card of document.querySelectorAll("[data-service]")) {
-    card.classList.toggle("selected", selected.has(card.getAttribute("data-service")));
-  }
-
-  element("#selection-summary").textContent = selected.size
-    ? aiServices.filter((service) => selected.has(service.id)).map((service) => service.title).join(" · ")
-    : "Поможем подобрать услуги под задачу.";
-  element("#clear-selection").hidden = selected.size === 0;
-  element("#selection-dock").hidden = selected.size === 0;
-  element("#dock-count").textContent = `Выбрано услуг: ${selected.size}`;
-
+/** @returns {Set<string>} */
+function restoreSelection() {
   try {
-    localStorage.setItem(storageKey, JSON.stringify([...selected]));
+    /** @type {unknown} */
+    const saved = JSON.parse(
+      localStorage.getItem("it-global-ai-services") || "[]",
+    );
+    const validIds = new Set(services.map((service) => service.id));
+
+    if (Array.isArray(saved)) {
+      return new Set(
+        saved.filter((id) => typeof id === "string" && validIds.has(id)),
+      );
+    }
   } catch {
-    // Contact details are never stored in the browser.
-  }
-}
-
-for (const button of document.querySelectorAll("[data-select]")) {
-  button.addEventListener("click", () => {
-    const id = button.getAttribute("data-select");
-
-    if (!allowed.has(id)) return;
-    if (selected.has(id)) selected.delete(id);
-    else selected.add(id);
-
-    renderSelection();
-  });
-}
-
-element("#clear-selection").addEventListener("click", () => {
-  selected.clear();
-  renderSelection();
-});
-
-for (const button of document.querySelectorAll("[data-filter]")) {
-  button.addEventListener("click", () => {
-    const filter = button.getAttribute("data-filter");
-    let count = 0;
-
-    for (const control of document.querySelectorAll("[data-filter]")) {
-      control.setAttribute("aria-pressed", String(control === button));
-    }
-
-    for (const card of document.querySelectorAll("[data-service]")) {
-      const visible = filter === "all" || card.getAttribute("data-category") === filter;
-
-      if (card instanceof HTMLElement) card.hidden = !visible;
-      if (visible) count += 1;
-    }
-
-    element("#service-count").textContent = `Показано услуг: ${count} из ${aiServices.length}`;
-  });
-}
-
-const menu = element("#mobile-nav");
-const menuToggle = element(".menu-toggle");
-
-menuToggle.addEventListener("click", () => {
-  menu.hidden = !menu.hidden;
-  menuToggle.setAttribute("aria-expanded", String(!menu.hidden));
-  menuToggle.setAttribute("aria-label", menu.hidden ? "Открыть меню" : "Закрыть меню");
-});
-
-for (const link of menu.querySelectorAll("a")) {
-  link.addEventListener("click", () => {
-    menu.hidden = true;
-    menuToggle.setAttribute("aria-expanded", "false");
-    menuToggle.setAttribute("aria-label", "Открыть меню");
-  });
-}
-
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !menu.hidden) {
-    menu.hidden = true;
-    menuToggle.setAttribute("aria-expanded", "false");
-    menuToggle.setAttribute("aria-label", "Открыть меню");
-    menuToggle.focus();
-  }
-});
-
-const scenarios = {
-  knowledge: {
-    label: "ПОМОЩНИК ПО БАЗЕ ЗНАНИЙ", title: "Нужная инструкция, когда она нужна",
-    description: "Сотрудник задаёт вопрос обычным языком. Помощник находит действующий документ, показывает выдержку и ссылку. Если сведений недостаточно, сообщает об этом.",
-    data: "Утверждённые инструкции, паспорта оборудования, регламенты и базу знаний.",
-    metric: "Время поиска, правильность ссылок и соблюдение прав доступа.",
-    question: "Где найти актуальный регламент передачи смены?", answerTitle: "Нашёл документ в базе знаний",
-    answer: "В разделе «Производство / Работа смены» есть утверждённый регламент. Перед передачей смены проверьте незавершённые работы и внесите записи в журнал.",
-    source: "↗ Регламент передачи смены · раздел 3", services: ["knowledge"],
-  },
-  quality: {
-    label: "ПОМОЩНИК ОТДЕЛА КАЧЕСТВА", title: "Сверка документов до ручной проверки",
-    description: "Помощник сопоставляет паспорт партии со спецификацией и отмечает расхождения. Решение о соответствии принимает специалист по утверждённому порядку.",
-    data: "Паспорта партий, спецификации, шаблоны актов и правила сверки.",
-    metric: "Точность извлечения полей, пропущенные расхождения и время проверки.",
-    question: "Каких сведений не хватает в паспорте партии?", answerTitle: "Нужна проверка специалиста",
-    answer: "В примере паспорта не найдено значение одного обязательного параметра. Подготовил перечень полей для сверки с исходным документом. Соответствие партии не подтверждено.",
-    source: "↗ Паспорт партии · таблица характеристик", services: ["documents", "quality"],
-  },
-  procurement: {
-    label: "ПОМОЩНИК СНАБЖЕНИЯ", title: "Предложения поставщиков в одном сравнении",
-    description: "Из писем и коммерческих предложений собираем таблицу характеристик, сроков и условий. Несопоставимые позиции и отсутствующие данные отмечаем для закупщика.",
-    data: "Коммерческие предложения, заявки подразделений и справочник номенклатуры.",
-    metric: "Время подготовки сравнения, корректность полей и число исправлений.",
-    question: "Сравни предложения по нашей заявке", answerTitle: "Подготовлено сравнение для закупщика",
-    answer: "У первого поставщика указаны все запрошенные параметры. У второго отсутствует срок поставки. Рекомендую запросить уточнение до решения. Заказ не отправлен.",
-    source: "↗ Предложения поставщиков · условия поставки", services: ["documents", "agents"],
-  },
-  reports: {
-    label: "ПОМОЩНИК РУКОВОДИТЕЛЯ СМЕНЫ", title: "События смены в понятной сводке",
-    description: "Из утверждённых записей собираем черновик отчёта с событиями, отклонениями и открытыми вопросами. Числовые показатели берём из учётной системы.",
-    data: "Журналы смены, утверждённые выгрузки и доступные отчёты.",
-    metric: "Полнота событий, отсутствие выдуманных причин и время подготовки сводки.",
-    question: "Что нужно передать следующей смене?", answerTitle: "Черновик сводки на проверку",
-    answer: "В журнале остались незавершённые работы и заявка на обслуживание. Добавил их в раздел передачи смены. Причина задержки в источниках не указана.",
-    source: "↗ Журнал смены · незавершённые работы", services: ["knowledge", "agents"],
-  },
-};
-let scenarioKey = "knowledge";
-
-for (const button of document.querySelectorAll("[data-scenario]")) {
-  button.addEventListener("click", () => {
-    const key = button.getAttribute("data-scenario");
-    const scenario = scenarios[key];
-
-    if (!scenario) return;
-
-    scenarioKey = key;
-
-    for (const control of document.querySelectorAll("[data-scenario]")) {
-      control.setAttribute("aria-pressed", String(control === button));
-    }
-
-    for (const field of ["label", "title", "description", "data", "metric"]) {
-      element(`#scenario-${field}`).textContent = scenario[field];
-    }
-
-    element("#demo-question").textContent = scenario.question;
-    element("#demo-title").textContent = scenario.answerTitle;
-    element("#demo-answer").textContent = scenario.answer;
-    element("#demo-source").textContent = scenario.source;
-  });
-}
-
-element("#scenario-request").addEventListener("click", () => {
-  for (const id of scenarios[scenarioKey].services) selected.add(id);
-
-  const message = document.querySelector('[name="message"]');
-
-  if (message instanceof HTMLTextAreaElement && !message.value.trim()) {
-    message.value = `Интересует сценарий: ${scenarios[scenarioKey].title}.`;
+    // The catalogue also works when browser storage is unavailable.
   }
 
-  renderSelection();
-});
-
-for (const link of document.querySelectorAll("[data-package]")) {
-  link.addEventListener("click", () => {
-    const services = { audit: ["audit"], pilot: ["audit", "quality", "training"], launch: ["agents", "support"] };
-
-    for (const id of services[link.getAttribute("data-package")] || []) selected.add(id);
-
-    renderSelection();
-  });
-}
-
-/** @param {number} value @returns {string} */
-function number(value) {
-  return value.toLocaleString("ru-RU", { maximumFractionDigits: 0 });
+  return new Set();
 }
 
 /** @returns {void} */
-function updateEffect() {
-  const result = calculateEffect({
-    volume: input("#calc-volume").valueAsNumber,
-    before: input("#calc-before").valueAsNumber,
-    after: input("#calc-after").valueAsNumber,
-    hourly: input("#calc-hourly").valueAsNumber,
-    operating: input("#calc-operating").valueAsNumber,
-    investment: input("#calc-investment").valueAsNumber,
+function renderCatalog() {
+  const openerGrid = previousOpener?.closest(
+    "#software-grid, #catalog-grid",
+  )?.id;
+  const openerService =
+    previousOpener instanceof HTMLElement
+      ? previousOpener.dataset.details || previousOpener.dataset.toggleService
+      : undefined;
+  const openerAttribute = previousOpener?.hasAttribute("data-details")
+    ? "data-details"
+    : "data-toggle-service";
+
+  const matching = services.filter((service) => {
+    const matchesCategory =
+      pageCategory === "all" || service.category === pageCategory;
+    const text = [
+      service.product,
+      service.title,
+      service.description,
+      ...service.replaces,
+    ]
+      .join(" ")
+      .toLocaleLowerCase("ru-RU");
+
+    return matchesCategory && text.includes(search);
   });
-  const results = element(".ai-calculation-results");
 
-  results.hidden = result === null;
-  element("#effect-error").textContent = result === null ? "Заполните все поля допустимыми числами. Количество операций должно быть целым." : "";
+  $("#software-grid").innerHTML = matching
+    .map((service) => serviceCard(service, selected.has(service.id), true))
+    .join("");
+  $("#catalog-result-count").textContent =
+    "Найдено услуг: " + matching.length + " из " + services.length;
+  $("#catalog-empty").hidden = matching.length > 0;
+  $("#catalog-grid").innerHTML = services
+    .filter((service) => category === "all" || service.category === category)
+    .map((service) => serviceCard(service, selected.has(service.id)))
+    .join("");
 
-  if (!result) return;
-
-  element("#effect-hours").textContent = result.hours >= 0 ? `${number(result.hours)} ч высвобождается` : `${number(-result.hours)} ч дополнительно`;
-  element("#effect-net").textContent = result.net >= 0 ? `${number(result.net)} ₽/мес.` : `${number(-result.net)} ₽/мес. дополнительных затрат`;
-  element("#effect-payback").textContent = result.payback === null
-    ? "При этих допущениях внедрение не окупается."
-    : `Условная окупаемость: ${result.payback.toLocaleString("ru-RU", { maximumFractionDigits: 1 })} мес. при полной реализации потенциала.`;
+  if (openerGrid && openerService) {
+    previousOpener = $$("#" + openerGrid + " [" + openerAttribute + "]").find(
+      (item) => item.getAttribute(openerAttribute) === openerService,
+    );
+  }
 }
 
-for (const field of document.querySelectorAll(".ai-calculation-inputs input")) {
-  field.addEventListener("input", updateEffect);
-}
+/** @returns {void} */
+function syncSelections() {
+  $$("#request-options input").forEach((input) => {
+    input.checked = selected.has(input.value);
+  });
 
-const form = document.querySelector("#ai-request-form");
-const submit = document.querySelector("#ai-request-submit");
-const phone = input('[name="phone"]');
-const status = element("#ai-form-status");
+  $("#selection-dock").hidden = selected.size === 0;
+  $("#selection-title").textContent = "Ваш набор услуг";
+  $("#selection-products").textContent = services
+    .filter((service) => selected.has(service.id))
+    .map((service) => service.product)
+    .join(" · ");
 
-if (!(form instanceof HTMLFormElement) || !(submit instanceof HTMLButtonElement)) throw new Error("Missing request form");
-
-phone.addEventListener("input", () => phone.setCustomValidity(""));
-
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-
-  if (sending) return;
-
-  const digits = phone.value.replace(/\D/g, "");
-  const validPhone = /^\+?[0-9 ()-]+$/.test(phone.value.trim()) && digits.length >= 7 && digits.length <= 15;
-
-  phone.setCustomValidity(validPhone ? "" : "Укажите телефон от 7 до 15 цифр. Допустимы пробелы, скобки, дефисы и плюс в начале.");
-
-  if (!form.reportValidity()) return;
-
-  const fields = new FormData(form);
-
-  sending = true;
-  submit.disabled = true;
-  submit.textContent = "Отправляем…";
-  form.setAttribute("aria-busy", "true");
-  status.textContent = "";
-  status.removeAttribute("data-state");
+  if (activeService) {
+    $("#select-service").textContent = selected.has(activeService.id)
+      ? "Убрать из заявки"
+      : "Добавить в заявку";
+  }
 
   try {
-    const response = await fetch("/api/requests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal: AbortSignal.timeout(60_000),
-      body: JSON.stringify({
-        kind: "ai",
-        name: fields.get("name"),
-        phone: fields.get("phone"),
-        company: fields.get("company"),
-        message: fields.get("message"),
-        serviceIds: [...selected],
-        deployment: fields.get("deployment"),
-      }),
-    });
-    const result = await response.json();
+    localStorage.setItem("it-global-ai-services", JSON.stringify([...selected]));
+  } catch {
+    // Selection remains available for the current page session.
+  }
 
-    if (!response.ok || result.ok !== true) {
-      throw new Error(typeof result.error === "string" ? result.error : "Не удалось отправить заявку. Попробуйте позже.");
+  renderCatalog();
+}
+
+/** @param {string} id @returns {void} */
+function toggleService(id) {
+  const service = services.find((item) => item.id === id);
+
+  if (!service) return;
+
+  if (selected.has(id)) selected.delete(id);
+  else selected.add(id);
+
+  syncSelections();
+  $("#selection-status").textContent =
+    service.product +
+    (selected.has(id) ? " добавлен в заявку." : " убран из заявки.") +
+    " Выбрано: " +
+    selected.size;
+}
+
+/** @param {string} id @param {HTMLElement} opener @returns {void} */
+function showService(id, opener) {
+  const s = services.find((item) => item.id === id);
+  if (!s) return;
+  activeService = s;
+  $("#service-dialog-title").textContent = s.title;
+  $("#service-dialog-product").textContent = "Услуги IT Global";
+  $("#service-dialog-detail").textContent = s.detail;
+  $("#service-dialog-replaces").textContent =
+    "Результат: " + s.replaces.join(", ");
+  $("#service-dialog-limitation").textContent = s.limitation;
+  $("#select-service").textContent = selected.has(id)
+    ? "Убрать из заявки"
+    : "Добавить в заявку";
+  openDialog("#service-dialog", opener);
+}
+
+document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return;
+
+  const button = event.target.closest("button");
+
+  if (!button) return;
+
+  if (button.hasAttribute("data-close")) button.closest("dialog").close();
+  if (button.hasAttribute("data-details"))
+    showService(button.dataset.details, button);
+  if (button.hasAttribute("data-request") || button.hasAttribute("data-plan")) {
+    $("#form-status").textContent = "";
+    openDialog("#request-dialog", button);
+  }
+
+  if (button.hasAttribute("data-catalog"))
+    openDialog("#catalog-dialog", button);
+  if (button.hasAttribute("data-journey"))
+    openDialog("#journey-dialog", button);
+  if (button.hasAttribute("data-calculator"))
+    openDialog("#calculator-dialog", button);
+
+  if (button.hasAttribute("data-toggle-service")) {
+    const id = button.dataset.toggleService;
+    const gridId = button.closest("#software-grid, #catalog-grid")?.id;
+
+    toggleService(id);
+
+    if (gridId) {
+      $$("#" + gridId + " [data-toggle-service]")
+        .find((item) => item.dataset.toggleService === id)
+        ?.focus({ preventScroll: true });
     }
+  }
 
-    status.dataset.state = "success";
-    status.textContent = "Заявка отправлена. Свяжемся с вами по указанному телефону.";
-    trackGoal("request_sent");
-  } catch (error) {
-    status.dataset.state = "error";
-    status.textContent = error instanceof Error && error.name === "Error"
-      ? error.message
-      : "Не удалось подтвердить отправку. Позвоните нам: +7 (921) 115-31-43.";
-  } finally {
-    sending = false;
-    submit.disabled = false;
-    submit.textContent = "Обсудить задачу";
-    form.removeAttribute("aria-busy");
+  if (button.hasAttribute("data-clear")) {
+    selected.clear();
+    syncSelections();
+    $("#selection-status").textContent = "Ваш набор очищен.";
+    $("#catalog-search").focus({ preventScroll: true });
+  }
+
+  if (
+    button.hasAttribute("data-page-filter") ||
+    button.hasAttribute("data-filter")
+  ) {
+    const isPage = button.hasAttribute("data-page-filter");
+    const selector = isPage ? "[data-page-filter]" : "[data-filter]";
+
+    if (isPage) pageCategory = button.dataset.pageFilter;
+    else category = button.dataset.filter;
+
+    $$(selector).forEach((item) => {
+      item.classList.toggle("active", item === button);
+      item.setAttribute("aria-pressed", String(item === button));
+    });
+
+    renderCatalog();
   }
 });
 
-renderSelection();
-updateEffect();
+$("#catalog-search").addEventListener("input", (event) => {
+  search = event.target.value.trim().toLocaleLowerCase("ru-RU");
+  renderCatalog();
+});
+
+$("#select-service").addEventListener("click", () => {
+  if (activeService) toggleService(activeService.id);
+});
+
+services.forEach((service) => {
+  const label = document.createElement("label");
+  const input = document.createElement("input");
+  const name = document.createElement("span");
+
+  label.className = "service-choice";
+  input.type = "checkbox";
+  input.name = "services";
+  input.value = service.id;
+  name.textContent = service.product;
+  label.append(input, name);
+  $("#request-options").append(label);
+});
+
+$("#request-options").addEventListener("change", (event) => {
+  if (event.target instanceof HTMLInputElement) toggleService(event.target.value);
+});
+
+$(".menu-toggle").addEventListener("click", () => {
+  const open = $(".menu-toggle").getAttribute("aria-expanded") !== "true";
+  $(".menu-toggle").setAttribute("aria-expanded", String(open));
+  $(".menu-toggle").setAttribute(
+    "aria-label",
+    open ? "Закрыть меню" : "Открыть меню",
+  );
+  $("#mobile-nav").hidden = !open;
+});
+
+$("#mobile-nav").addEventListener("click", (event) => {
+  if (event.target.closest("a")) closeMenu();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeMenu();
+});
+window.matchMedia("(min-width: 1281px)").addEventListener("change", (event) => {
+  if (event.matches) closeMenu();
+});
+$$("dialog").forEach((dialog) => {
+  dialog.addEventListener("click", (event) => {
+    if (event.target !== dialog) return;
+    const r = dialog.getBoundingClientRect();
+    if (
+      event.clientX < r.left ||
+      event.clientX > r.right ||
+      event.clientY < r.top ||
+      event.clientY > r.bottom
+    )
+      dialog.close();
+  });
+  dialog.addEventListener("close", () => {
+    requestAnimationFrame(() => {
+      if (
+        !$("dialog[open]") &&
+        previousOpener?.isConnected &&
+        !previousOpener.closest("dialog")
+      )
+        previousOpener.focus({ preventScroll: true });
+    });
+  });
+});
+
+initializeCalculator();
+
+initializeHero();
+
+initializeRequestForm(() => [...selected]);
+
+syncSelections();
+
+// A solution page can pass its task to the existing request form.
+const requestParams = new URLSearchParams(location.search);
+const requestedService = services.find((service) => service.id === requestParams.get("request"));
+
+if (requestedService || requestParams.get("request") === "consultation") {
+  if (requestedService) {
+    selected.add(requestedService.id);
+    syncSelections();
+  }
+
+  const message = $("#request-form [name=message]");
+
+  if (!message.value) message.value = (requestParams.get("task") || "").slice(0, 3000);
+
+  openDialog("#request-dialog");
+  requestParams.delete("request");
+  requestParams.delete("task");
+
+  const remainingQuery = requestParams.toString();
+
+  history.replaceState(null, "", location.pathname + (remainingQuery ? "?" + remainingQuery : "") + location.hash);
+}
