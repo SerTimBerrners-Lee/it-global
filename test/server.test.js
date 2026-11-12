@@ -8,6 +8,43 @@ import { createApp } from "../server/server.js";
 
 const origin = "https://its-global.ru";
 
+test("infrastructure requests reach the sender with the correct offer and scope", async (context) => {
+  const { port, messages } = await fixture(context);
+  const response = await post(port, {
+    kind: "infrastructure", name: "Тест", phone: "+7 999 123-45-67",
+    message: "Перенести из ЦОДа", serviceIds: ["cloud-migration", "ai-server"], price: 9900,
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(messages.length, 1);
+  assert.match(messages[0].subject, /серверы в Санкт-Петербурге/);
+  assert.match(messages[0].text, /Перенос из облаков и ЦОДов/);
+  assert.match(messages[0].text, /Сервер для ИИ/);
+  assert.doesNotMatch(messages[0].text, /9 900|9900|49 900/);
+});
+
+test("infrastructure requests reject unrelated services before sending", async (context) => {
+  const { port, messages } = await fixture(context);
+  const response = await post(port, {
+    kind: "infrastructure", name: "Тест", phone: "+7 999 123-45-67", serviceIds: ["training"],
+  });
+
+  assert.equal(response.status, 400);
+  assert.equal(messages.length, 0);
+});
+
+test("infrastructure requests report unavailable mail without claiming delivery", async (context) => {
+  const { port, messages } = await fixture(context, {
+    sender: { ready: false, /** @returns {Promise<void>} */ async send() { assert.fail("Must not send"); } },
+  });
+  const response = await post(port, {
+    kind: "infrastructure", name: "Тест", phone: "+7 999 123-45-67", serviceIds: [],
+  });
+
+  assert.equal(response.status, 503);
+  assert.equal(messages.length, 0);
+});
+
 test("AI form reaches the mail sender with its own offer and server-resolved service names", async (context) => {
   const { port, messages } = await fixture(context);
   const response = await post(port, {

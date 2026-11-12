@@ -2,9 +2,10 @@ import { trackGoal } from "../analytics.js";
 
 /**
  * @param {() => string[]} getSelected
+ * @param {'ai' | 'infrastructure'} [kind]
  * @returns {void}
  */
-export function initializeRequestForm(getSelected) {
+export function initializeRequestForm(getSelected, kind = "ai") {
   const form = document.querySelector("#request-form");
   const submit = document.querySelector("#request-submit");
   const status = document.querySelector("#form-status");
@@ -43,7 +44,7 @@ export function initializeRequestForm(getSelected) {
         headers: { "Content-Type": "application/json" },
         signal: AbortSignal.timeout(60_000),
         body: JSON.stringify({
-          kind: "ai",
+          kind,
           company: "",
           deployment: "undecided",
           name: fields.get("name"),

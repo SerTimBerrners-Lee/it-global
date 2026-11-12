@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { RequestError, validateRequest, formatRequest } from "./request.js";
 import { validateAiRequest, formatAiRequest } from "./ai-request.js";
+import { validateInfrastructureRequest, formatInfrastructureRequest } from "./infrastructure-request.js";
 
 const publicDirectory = path.resolve(fileURLToPath(new URL("../dist/", import.meta.url)));
 const bodyLimit = 16 * 1024;
@@ -224,9 +225,12 @@ export function createApp({ sender, allowedOrigins, trustProxy = false, rateLimi
       attempts.set(address, entry);
       const payload = await readJson(request);
       const isAi = payload !== null && typeof payload === "object" && "kind" in payload && payload.kind === "ai";
-      const message = isAi
-        ? formatAiRequest(validateAiRequest(payload))
-        : formatRequest(validateRequest(payload));
+      const isInfrastructure = payload !== null && typeof payload === "object" && "kind" in payload && payload.kind === "infrastructure";
+      const message = isInfrastructure
+        ? formatInfrastructureRequest(validateInfrastructureRequest(payload))
+        : isAi
+          ? formatAiRequest(validateAiRequest(payload))
+          : formatRequest(validateRequest(payload));
 
       if (!sender.ready) {
         throw new RequestError("Отправка заявок временно недоступна. Позвоните нам: +7 (921) 115-31-43.", 503);
