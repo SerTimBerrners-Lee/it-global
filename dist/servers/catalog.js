@@ -14,18 +14,19 @@ const services = [
 ];
 
 /** @type {InfrastructureService[]} */
-export const infrastructureServices = services.filter((service) => service.id !== "ai-server");
+export const infrastructureServices = services.filter((service) => !["ai-server", "hardware-selection"].includes(service.id));
 
 /** @type {InfrastructureService[]} */
-export const aiServerServices = [
-  ...services.filter((service) => ["hardware-selection", "ai-server"].includes(service.id)),
-  { id: "ai-models", title: "Развёртывание моделей", description: "Установим среду запуска языковых моделей. Проверим совместимость, условия использования и выбранные рабочие сценарии.", logo: "ollama.svg" },
-  { id: "ai-access", title: "Доступ команды к ИИ", description: "Настроим рабочий интерфейс, учётные записи и права сотрудников. Согласуем подключение приложений к моделям.", logo: "jitsi.svg" },
-  { id: "ai-performance", title: "Проверка производительности", description: "Измерим скорость ответов и потребление ресурсов при согласованной нагрузке. Подготовим рекомендации по расширению.", logo: "matomo.svg" },
-  ...services.filter((service) => ["network-access", "backup-recovery", "monitoring", "maintenance"].includes(service.id)),
+export const hardwareServices = [
+  { id: "hardware-audit", title: "Проверка оборудования", description: "Оценим существующий сервер, его ресурсы и состояние. Определим, можно ли использовать его под вашу задачу.", logo: "matomo.svg" },
+  { id: "hardware-sizing", title: "Расчёт конфигурации", description: "Подберём процессор, ОЗУ, диски и сетевые интерфейсы под приложения, объём данных и нагрузку.", logo: "tasks.png" },
+  { id: "hardware-selection", title: "Спецификация для закупки", description: "Подготовим перечень совместимых компонентов и требования к серверу. Согласуем бюджет и запас для расширения.", logo: "onlyoffice.svg" },
+  { id: "hardware-assembly", title: "Сборка и конфигурирование", description: "Согласуем сборку или комплектацию готового сервера. Проверим память, диски, контроллеры и настройки оборудования.", logo: "automation.png" },
+  { id: "hardware-installation", title: "Установка на площадке", description: "Проверим место, питание, охлаждение и сеть. Согласуем физическую установку и подключение в Санкт-Петербурге.", logo: "nextcloud.svg" },
+  { id: "hardware-testing", title: "Проверка перед передачей", description: "Проведём согласованные проверки оборудования и нагрузки. Передадим спецификацию, настройки и результаты проверки.", logo: "vaultwarden.svg" },
 ];
 
-/** @param {'infrastructure' | 'ai-infrastructure'} kind @returns {InfrastructureService[]} */
+/** @param {'infrastructure' | 'hardware'} kind @returns {InfrastructureService[]} */
 export function getInfrastructureServices(kind) {
-  return kind === "ai-infrastructure" ? aiServerServices : infrastructureServices;
+  return kind === "hardware" ? hardwareServices : infrastructureServices;
 }

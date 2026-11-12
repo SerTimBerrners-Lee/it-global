@@ -1,6 +1,7 @@
 import { getInfrastructureServices } from "./catalog.js";
 import { initializeRequestForm } from "../ai/request-form.js";
 import { trackGoal } from "../analytics.js";
+import { initializeHardwareConfigurator } from "../hardware/calculator-ui.js";
 
 /** @param {string} selector @returns {HTMLElement} */
 function element(selector) {
@@ -16,9 +17,11 @@ const menu = element("#mobile-nav");
 const toggle = element(".menu-toggle");
 const kind = document.body.dataset.offer;
 
-if (kind !== "infrastructure" && kind !== "ai-infrastructure") throw new Error("Неизвестное направление серверных услуг.");
+if (kind !== "infrastructure" && kind !== "hardware") throw new Error("Неизвестное направление серверных услуг.");
 
 const infrastructureServices = getInfrastructureServices(kind);
+const configurator = kind === "hardware" ? initializeHardwareConfigurator() : null;
+let sendConfiguration = false;
 
 /** @type {HTMLElement | null} */
 let opener = null;
@@ -36,6 +39,10 @@ document.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-request]");
 
   if (button instanceof HTMLElement) {
+    sendConfiguration = button.hasAttribute("data-configuration-request");
+
+    if (sendConfiguration && !configurator?.validate()) return;
+
     opener = button;
     const serviceId = button.dataset.service;
 
@@ -86,4 +93,4 @@ window.matchMedia("(min-width: 1281px)").addEventListener("change", (event) => {
 
 initializeRequestForm(() => [...document.querySelectorAll('#request-options input:checked')]
   .filter((input) => input instanceof HTMLInputElement)
-  .map((input) => input.value), kind);
+  .map((input) => input.value), kind, () => ({ configuration: sendConfiguration ? configurator?.getConfiguration() : null }));

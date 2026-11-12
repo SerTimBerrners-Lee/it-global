@@ -1,8 +1,8 @@
 import { aiServices, deployments } from "../dist/ai/catalog.js";
-import { RequestError, validateContact } from "./request.js";
+import { RequestError, validateContact, contactLine } from "./request.js";
 
 /**
- * @typedef {{name: string, phone: string, message: string, company: string, serviceIds: string[], deployment: string}} AiRequest
+ * @typedef {{name: string, contact: string, contactType: 'phone' | 'email', message: string, company: string, serviceIds: string[], deployment: string}} AiRequest
  */
 
 /** @param {unknown} value @returns {AiRequest} */
@@ -50,7 +50,7 @@ export function formatAiRequest(request) {
     "Заявка на внедрение LLM. IT Global AI",
     "",
     `Имя: ${request.name}`,
-    `Телефон: ${request.phone}`,
+    contactLine(request),
     `Компания: ${request.company || "Не указана"}`,
     `Размещение: ${deployments[request.deployment]}`,
     "",

@@ -1,0 +1,7 @@
+.hardware-configurator .calculator-grid{align-items:start}
+.hardware-configurator .form-row{margin-bottom:0}
+.hardware-configurator .calculator-results{position:sticky;top:24px}
+.hardware-configurator .calculator-results dd{white-space:normal;max-width:55%}
+.hardware-configurator .calculator-results .button{width:100%;margin-top:16px}
+.hardware-configurator .configuration-error{color:#a63520;font-size:14px;line-height:20px}
+@media(max-width:850px){.hardware-configurator .calculator-results{position:static}}

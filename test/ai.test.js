@@ -18,7 +18,7 @@ test("AI requests use verified service names without inherited catalog tariffs",
   assert.match(mail.text, /Обучение сотрудников/);
   assert.match(mail.text, /В инфраструктуре компании/);
   assert.doesNotMatch(mail.text, /9 900|49 900|12 месяцев|attacker|Forged|Экономия/);
-  assert.deepEqual(Object.keys(data), ["name", "phone", "message", "company", "serviceIds", "deployment"]);
+  assert.deepEqual(Object.keys(data), ["name", "contact", "contactType", "message", "company", "serviceIds", "deployment"]);
 });
 
 test("AI request validation rejects unknown, duplicate or malformed services and placement", () => {

@@ -1,10 +1,12 @@
 import { calculateCosts } from "../dist/calculator.js";
 import { services } from "../dist/services.js";
+import { parseContact } from "../dist/contact.js";
 
 /**
  * @typedef {Object} RequestData
  * @property {string} name
- * @property {string} phone
+ * @property {string} contact
+ * @property {'phone' | 'email'} contactType
  * @property {string} message
  * @property {string[]} serviceIds
  * @property {{current: number, plan: 'single' | 'bundle', needsVds: boolean}} calculation
@@ -28,7 +30,7 @@ function isRecord(value) {
   return prototype === Object.prototype || prototype === null;
 }
 
-/** @param {unknown} value @returns {{name: string, phone: string, message: string}} */
+/** @param {unknown} value @returns {{name: string, contact: string, contactType: 'phone' | 'email', message: string}} */
 export function validateContact(value) {
   if (!isRecord(value)) {
     throw new RequestError("Не удалось прочитать заявку. Попробуйте ещё раз.");
@@ -43,22 +45,9 @@ export function validateContact(value) {
     throw new RequestError("Укажите имя длиной от 1 до 100 символов без переноса строки.");
   }
 
-  if (typeof value.phone !== "string") {
-    throw new RequestError("Укажите номер телефона.");
-  }
+  const contact = parseContact(Object.hasOwn(value, "contact") ? value.contact : value.phone);
 
-  const phone = value.phone.trim();
-  const phoneDigits = phone.replace(/\D/g, "");
-
-  if (
-    phone.length > 30 ||
-    !/^\+?[0-9 ()-]+$/.test(phone) ||
-    /[\u0000-\u001f\u007f-\u009f]/u.test(value.phone) ||
-    phoneDigits.length < 7 ||
-    phoneDigits.length > 15
-  ) {
-    throw new RequestError("Введите номер телефона от 7 до 15 цифр. Допустимы пробелы, скобки, дефисы и плюс в начале.");
-  }
+  if (!contact) throw new RequestError("Укажите телефон от 7 до 15 цифр или email, например name@company.ru.");
 
   const message = value.message === undefined ? "" : value.message;
 
@@ -66,7 +55,12 @@ export function validateContact(value) {
     throw new RequestError("Описание задачи должно содержать не больше 3000 символов.");
   }
 
-  return { name: value.name.trim(), phone, message: message.trim() };
+  return { name: value.name.trim(), contact: contact.value, contactType: contact.type, message: message.trim() };
+}
+
+/** @param {{contact: string, contactType: 'phone' | 'email'}} request @returns {string} */
+export function contactLine(request) {
+  return (request.contactType === "email" ? "Email: " : "Телефон: ") + request.contact;
 }
 
 /** @param {unknown} value @returns {RequestData} */
@@ -137,7 +131,7 @@ export function formatRequest(request) {
     "Заявка на внедрение корпоративных сервисов. IT Global",
     "",
     "Имя: " + request.name,
-    "Телефон: " + request.phone,
+    contactLine(request),
     "",
     "Формат по выбранным сервисам: " + plan,
     selectedPrice,

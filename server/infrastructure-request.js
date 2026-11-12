@@ -1,13 +1,14 @@
 import { getInfrastructureServices } from "../dist/servers/catalog.js";
-import { RequestError, validateContact } from "./request.js";
+import { RequestError, validateContact, contactLine } from "./request.js";
+import { evaluateConfiguration, configurationChoices } from "../dist/hardware/configuration.js";
 
-/** @typedef {{name: string, phone: string, message: string, serviceIds: string[], kind: 'infrastructure' | 'ai-infrastructure'}} InfrastructureRequest */
+/** @typedef {{name: string, contact: string, contactType: 'phone' | 'email', message: string, serviceIds: string[], kind: 'infrastructure' | 'hardware', configuration: import('../dist/hardware/configuration.js').HardwareConfiguration | null}} InfrastructureRequest */
 
 /** @param {unknown} value @returns {InfrastructureRequest} */
 export function validateInfrastructureRequest(value) {
   const contact = validateContact(value);
 
-  if (value === null || typeof value !== "object" || !("kind" in value) || (value.kind !== "infrastructure" && value.kind !== "ai-infrastructure")) {
+  if (value === null || typeof value !== "object" || !("kind" in value) || (value.kind !== "infrastructure" && value.kind !== "hardware")) {
     throw new RequestError("Проверьте тип заявки.");
   }
 
@@ -28,18 +29,30 @@ export function validateInfrastructureRequest(value) {
     selected.add(id);
   }
 
-  return { ...contact, serviceIds: [...selected], kind: value.kind };
+  let configuration = null;
+
+  if ("configuration" in value && value.configuration !== null && value.configuration !== undefined) {
+    if (value.kind !== "hardware") throw new RequestError("Конфигурация оборудования относится к заявке на подбор сервера.");
+
+    const result = evaluateConfiguration(value.configuration);
+
+    if (!result.ok) throw new RequestError(result.error);
+
+    configuration = result.configuration;
+  }
+
+  return { ...contact, serviceIds: [...selected], kind: value.kind, configuration };
 }
 
 /** @param {InfrastructureRequest} request @returns {import('./mail.js').MailMessage} */
 export function formatInfrastructureRequest(request) {
   const chosen = getInfrastructureServices(request.kind).filter((service) => request.serviceIds.includes(service.id));
-  const isAi = request.kind === "ai-infrastructure";
-  const text = [
-    isAi ? "Заявка на сервер для ИИ. Санкт-Петербург." : "Заявка на серверы и перенос инфраструктуры. Санкт-Петербург.",
+  const isHardware = request.kind === "hardware";
+  let text = [
+    isHardware ? "Заявка на подбор физического сервера. Санкт-Петербург." : "Заявка на развёртывание и перенос сервисов. Санкт-Петербург.",
     "",
     `Имя: ${request.name}`,
-    `Телефон: ${request.phone}`,
+    contactLine(request),
     "",
     "Выбранные услуги:",
     ...chosen.map((service) => `- ${service.title}`),
@@ -51,7 +64,27 @@ export function formatInfrastructureRequest(request) {
     "Состав работ, оборудование, сроки, выезд и сопровождение согласуются после оценки.",
   ].join("\n");
 
-  return { subject: isAi
-    ? "Заявка на сервер для ИИ в Санкт-Петербурге с its-global.ru/ai-servers/"
-    : "Заявка на серверы в Санкт-Петербурге с its-global.ru/servers/", text };
+  const result = request.configuration ? evaluateConfiguration(request.configuration) : null;
+
+  if (result?.ok) {
+    const c = result.configuration;
+
+    text += "\n\nПредварительные требования посетителя к физическому серверу:\n" + [
+      "Назначение: " + configurationChoices.purpose[c.purpose],
+      "Пользователей одновременно: " + c.users,
+      "Процессор: " + c.cores + " ядер",
+      "ОЗУ: " + c.ram + " ГБ",
+      "Диски: " + c.diskCount + " × " + c.diskSize + " ТБ, " + configurationChoices.diskType[c.diskType],
+      "Массив: " + configurationChoices.raid[c.raid],
+      "Номинальный полезный объём: " + result.usableTb + " ТБ до форматирования и служебных резервов",
+      "Видеокарта: " + configurationChoices.gpu[c.gpu],
+      "Корпус: " + configurationChoices.chassis[c.chassis],
+      "Бюджет на оборудование: " + (c.budget === null ? "Не указан" : c.budget.toLocaleString("ru-RU") + " ₽"),
+      "Совместимость и достаточность ресурсов требуют инженерной проверки. Это не готовая спецификация или предложение цены.",
+    ].join("\n");
+  }
+
+  return { subject: isHardware
+    ? "Заявка на физический сервер в Санкт-Петербурге с its-global.ru/hardware/"
+    : "Заявка на развёртывание сервисов в Санкт-Петербурге с its-global.ru/servers/", text };
 }

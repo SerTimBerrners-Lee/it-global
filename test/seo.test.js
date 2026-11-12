@@ -10,7 +10,7 @@ const dist = path.join(root, "dist");
 const site = JSON.parse(await readFile(path.join(root, "content/site.json"), "utf8"));
 const aiPages = JSON.parse(await readFile(path.join(root, "content/solutions.json"), "utf8"));
 const servicePages = JSON.parse(await readFile(path.join(root, "content/services-pages.json"), "utf8"));
-const routes = ["/", "/ai/", "/servers/", "/ai-servers/", ...aiPages.map((page) => `/solutions/${page.slug}/`), ...servicePages.map((page) => `/services/${page.slug}/`)];
+const routes = ["/", "/ai/", "/servers/", "/hardware/", ...aiPages.map((page) => `/solutions/${page.slug}/`), ...servicePages.map((page) => `/services/${page.slug}/`)];
 const pages = new Map(await Promise.all(routes.map(async (route) => [route, await readFile(path.join(dist, route, "index.html"), "utf8")])));
 
 /** @param {string} value @returns {string} */
@@ -59,18 +59,18 @@ test("both offers are discoverable and infrastructure has its own local service 
 
   assert.equal(service.areaServed.name, "Санкт-Петербург");
   assert.equal(service.url, site.url + "/servers/");
-  assert.match(html, /Новый сервер/);
+  assert.match(html, /Запуск сервисов/);
   assert.match(html, /Перенос из облака или ЦОДа/);
   assert.doesNotMatch(html, /data-service="ai-server"/);
-  assert.match(pages.get("/ai-servers/"), /data-service="ai-server"/);
-  assert.doesNotMatch(pages.get("/ai-servers/"), /data-service="cloud-migration"/);
+  assert.match(pages.get("/hardware/"), /data-service="hardware-sizing"/);
+  assert.doesNotMatch(pages.get("/hardware/"), /data-service="cloud-migration"/);
   assert.doesNotMatch(html, /9 900|49 900|70 000|\u2014/);
 
   for (const route of ["/", "/ai/"]) {
     const links = attributes(pages.get(route), "a").map((item) => item.href);
 
     assert.ok(links.includes("/servers/"), route);
-    assert.ok(links.includes("/ai-servers/"), route);
+    assert.ok(links.includes("/hardware/"), route);
   }
 });
 
@@ -83,6 +83,26 @@ test("the sitemap contains both offers and all generated destination pages", asy
   assert.equal(new Set(urls).size, urls.length);
   assert.deepEqual(urls.sort(), expected.sort());
   assert.match(await readFile(path.join(dist, "robots.txt"), "utf8"), new RegExp(`Sitemap: ${site.url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/sitemap\\.xml`));
+});
+
+test("every form uses one phone-or-email field and hardware exposes a real configuration request", () => {
+  for (const route of ["/", "/ai/", "/servers/", "/hardware/"]) {
+    const inputs = attributes(pages.get(route), "input");
+    const contacts = inputs.filter((input) => input.name === "contact");
+
+    assert.equal(contacts.length, 1, route);
+    assert.equal(contacts[0].type, "text", route);
+    assert.equal(inputs.some((input) => input.name === "phone"), false, route);
+    assert.match(pages.get(route), /Телефон или email/);
+  }
+
+  const hardware = pages.get("/hardware/");
+
+  assert.match(hardware, /id="hardware-configuration"/);
+  assert.match(hardware, /name="ram"/);
+  assert.match(hardware, /name="diskCount"/);
+  assert.match(hardware, /data-configuration-request/);
+  assert.doesNotMatch(hardware, /\u2014/);
 });
 
 test("every indexable page has unique metadata, one heading and its canonical address", () => {

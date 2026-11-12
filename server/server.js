@@ -182,6 +182,12 @@ export function createApp({ sender, allowedOrigins, trustProxy = false, rateLimi
     try {
       const url = new URL(request.url, "http://localhost");
 
+      if (["/ai-servers", "/ai-servers/", "/ai-servers/index.html"].includes(url.pathname) && ["GET", "HEAD"].includes(request.method)) {
+        response.writeHead(301, { Location: "/hardware/" + url.search });
+        response.end();
+        return;
+      }
+
       if (url.pathname !== "/api/requests") {
         await serveFile(request, response, url);
         return;
@@ -226,7 +232,7 @@ export function createApp({ sender, allowedOrigins, trustProxy = false, rateLimi
       const payload = await readJson(request);
       const isAi = payload !== null && typeof payload === "object" && "kind" in payload && payload.kind === "ai";
       const isInfrastructure = payload !== null && typeof payload === "object" && "kind" in payload
-        && (payload.kind === "infrastructure" || payload.kind === "ai-infrastructure");
+        && (payload.kind === "infrastructure" || payload.kind === "hardware");
       const message = isInfrastructure
         ? formatInfrastructureRequest(validateInfrastructureRequest(payload))
         : isAi

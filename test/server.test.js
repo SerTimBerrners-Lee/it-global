@@ -5,8 +5,41 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { createApp } from "../server/server.js";
+import { defaultConfiguration } from "../dist/hardware/configuration.js";
 
 const origin = "https://its-global.ru";
+
+test("every request direction accepts either a phone or an email in the single contact field", async (context) => {
+  const { port, messages } = await fixture(context);
+  const variants = [
+    { ...validRequest(), phone: undefined },
+    { kind: "ai", name: "Тест", serviceIds: [], deployment: "undecided" },
+    { kind: "infrastructure", name: "Тест", serviceIds: [] },
+    { kind: "hardware", name: "Тест", serviceIds: [] },
+  ];
+
+  for (const variant of variants) {
+    for (const contact of ["client@example.com", "+7 999 123-45-67"]) {
+      const response = await post(port, { ...variant, contact });
+
+      assert.equal(response.status, 200);
+      assert.ok(messages.at(-1).text.includes(contact));
+    }
+  }
+
+  assert.equal(messages.length, 8);
+});
+
+test("retired AI server addresses redirect to physical hardware selection", async (context) => {
+  const { port } = await fixture(context);
+
+  for (const route of ["/ai-servers", "/ai-servers/", "/ai-servers/index.html"]) {
+    const response = await exchange(port, { path: route + "?source=old" });
+
+    assert.equal(response.status, 301);
+    assert.equal(response.headers.location, "/hardware/?source=old");
+  }
+});
 
 test("infrastructure requests reach the sender with the correct offer and scope", async (context) => {
   const { port, messages } = await fixture(context);
@@ -17,29 +50,32 @@ test("infrastructure requests reach the sender with the correct offer and scope"
 
   assert.equal(response.status, 200);
   assert.equal(messages.length, 1);
-  assert.match(messages[0].subject, /серверы в Санкт-Петербурге/);
+  assert.match(messages[0].subject, /развёртывание сервисов в Санкт-Петербурге/);
   assert.match(messages[0].text, /Перенос из облаков и ЦОДов/);
   assert.match(messages[0].text, /Копии и восстановление/);
   assert.doesNotMatch(messages[0].text, /9 900|9900|49 900/);
 });
 
-test("AI server requests keep their page identity and dedicated services", async (context) => {
+test("physical server requests deliver the configuration and email to the configured sender", async (context) => {
   const { port, messages } = await fixture(context);
   const response = await post(port, {
-    kind: "ai-infrastructure", name: "Тест", phone: "+7 999 123-45-67",
-    serviceIds: ["ai-server", "ai-models"],
+    kind: "hardware", name: "Тест", contact: "server@example.com",
+    serviceIds: ["hardware-sizing"], configuration: { ...defaultConfiguration, ram: 128, usableTb: 999999 },
   });
 
   assert.equal(response.status, 200);
   assert.equal(messages.length, 1);
-  assert.match(messages[0].subject, /\/ai-servers\//);
-  assert.match(messages[0].text, /Развёртывание моделей/);
+  assert.match(messages[0].subject, /\/hardware\//);
+  assert.match(messages[0].text, /Email: server@example.com/);
+  assert.match(messages[0].text, /ОЗУ: 128 ГБ/);
+  assert.match(messages[0].text, /Номинальный полезный объём: 4 ТБ/);
+  assert.doesNotMatch(messages[0].text, /999999/);
 });
 
 test("server pages cannot submit services from the other direction", async (context) => {
   const { port, messages } = await fixture(context);
 
-  for (const [kind, serviceIds] of [["infrastructure", ["ai-server"]], ["ai-infrastructure", ["cloud-migration"]]]) {
+  for (const [kind, serviceIds] of [["infrastructure", ["hardware-sizing"]], ["hardware", ["cloud-migration"]]]) {
     const response = await post(port, { kind, serviceIds, name: "Тест", phone: "+7 999 123-45-67" });
 
     assert.equal(response.status, 400);
@@ -110,7 +146,7 @@ test("AI requests report unavailable mail without claiming delivery", async (con
   assert.equal(messages.length, 0);
 });
 
-/** @returns {import('../server/request.js').RequestData} */
+/** @returns {Omit<import('../server/request.js').RequestData, 'contact' | 'contactType'> & {phone: string}} */
 function validRequest() {
   return {
     name: "Проверка формы",
