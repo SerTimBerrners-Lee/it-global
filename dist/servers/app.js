@@ -1,4 +1,4 @@
-import { infrastructureServices } from "./catalog.js";
+import { getInfrastructureServices } from "./catalog.js";
 import { initializeRequestForm } from "../ai/request-form.js";
 import { trackGoal } from "../analytics.js";
 
@@ -14,6 +14,12 @@ function element(selector) {
 const dialog = element("#request-dialog");
 const menu = element("#mobile-nav");
 const toggle = element(".menu-toggle");
+const kind = document.body.dataset.offer;
+
+if (kind !== "infrastructure" && kind !== "ai-infrastructure") throw new Error("Неизвестное направление серверных услуг.");
+
+const infrastructureServices = getInfrastructureServices(kind);
+
 /** @type {HTMLElement | null} */
 let opener = null;
 
@@ -80,4 +86,4 @@ window.matchMedia("(min-width: 1281px)").addEventListener("change", (event) => {
 
 initializeRequestForm(() => [...document.querySelectorAll('#request-options input:checked')]
   .filter((input) => input instanceof HTMLInputElement)
-  .map((input) => input.value), "infrastructure");
+  .map((input) => input.value), kind);

@@ -10,7 +10,7 @@ const dist = path.join(root, "dist");
 const site = JSON.parse(await readFile(path.join(root, "content/site.json"), "utf8"));
 const aiPages = JSON.parse(await readFile(path.join(root, "content/solutions.json"), "utf8"));
 const servicePages = JSON.parse(await readFile(path.join(root, "content/services-pages.json"), "utf8"));
-const routes = ["/", "/ai/", "/servers/", ...aiPages.map((page) => `/solutions/${page.slug}/`), ...servicePages.map((page) => `/services/${page.slug}/`)];
+const routes = ["/", "/ai/", "/servers/", "/ai-servers/", ...aiPages.map((page) => `/solutions/${page.slug}/`), ...servicePages.map((page) => `/services/${page.slug}/`)];
 const pages = new Map(await Promise.all(routes.map(async (route) => [route, await readFile(path.join(dist, route, "index.html"), "utf8")])));
 
 /** @param {string} value @returns {string} */
@@ -59,15 +59,18 @@ test("both offers are discoverable and infrastructure has its own local service 
 
   assert.equal(service.areaServed.name, "Санкт-Петербург");
   assert.equal(service.url, site.url + "/servers/");
-  assert.match(html, /Корпоративный сервер/);
-  assert.match(html, /Сервер для ИИ/);
+  assert.match(html, /Новый сервер/);
+  assert.match(html, /Перенос из облака или ЦОДа/);
+  assert.doesNotMatch(html, /data-service="ai-server"/);
+  assert.match(pages.get("/ai-servers/"), /data-service="ai-server"/);
+  assert.doesNotMatch(pages.get("/ai-servers/"), /data-service="cloud-migration"/);
   assert.doesNotMatch(html, /9 900|49 900|70 000|\u2014/);
 
   for (const route of ["/", "/ai/"]) {
     const links = attributes(pages.get(route), "a").map((item) => item.href);
 
     assert.ok(links.includes("/servers/"), route);
-    assert.ok(links.includes("/ai/"), route);
+    assert.ok(links.includes("/ai-servers/"), route);
   }
 });
 
@@ -76,7 +79,7 @@ test("the sitemap contains both offers and all generated destination pages", asy
   const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => decode(match[1]));
   const expected = routes.map((route) => new URL(route, site.url).href);
 
-  assert.equal(routes.length, 24);
+  assert.equal(routes.length, 25);
   assert.equal(new Set(urls).size, urls.length);
   assert.deepEqual(urls.sort(), expected.sort());
   assert.match(await readFile(path.join(dist, "robots.txt"), "utf8"), new RegExp(`Sitemap: ${site.url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/sitemap\\.xml`));

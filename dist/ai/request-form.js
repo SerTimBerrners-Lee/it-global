@@ -2,7 +2,7 @@ import { trackGoal } from "../analytics.js";
 
 /**
  * @param {() => string[]} getSelected
- * @param {'ai' | 'infrastructure'} [kind]
+ * @param {'ai' | 'infrastructure' | 'ai-infrastructure'} [kind]
  * @returns {void}
  */
 export function initializeRequestForm(getSelected, kind = "ai") {

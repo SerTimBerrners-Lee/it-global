@@ -1,18 +1,18 @@
-import { infrastructureServices } from "../dist/servers/catalog.js";
+import { getInfrastructureServices } from "../dist/servers/catalog.js";
 import { RequestError, validateContact } from "./request.js";
 
-/** @typedef {{name: string, phone: string, message: string, serviceIds: string[]}} InfrastructureRequest */
+/** @typedef {{name: string, phone: string, message: string, serviceIds: string[], kind: 'infrastructure' | 'ai-infrastructure'}} InfrastructureRequest */
 
 /** @param {unknown} value @returns {InfrastructureRequest} */
 export function validateInfrastructureRequest(value) {
   const contact = validateContact(value);
 
-  if (value === null || typeof value !== "object" || !("kind" in value) || value.kind !== "infrastructure") {
+  if (value === null || typeof value !== "object" || !("kind" in value) || (value.kind !== "infrastructure" && value.kind !== "ai-infrastructure")) {
     throw new RequestError("Проверьте тип заявки.");
   }
 
   const serviceIds = "serviceIds" in value ? value.serviceIds : null;
-  const knownIds = new Set(infrastructureServices.map((service) => service.id));
+  const knownIds = new Set(getInfrastructureServices(value.kind).map((service) => service.id));
 
   if (!Array.isArray(serviceIds) || serviceIds.length > knownIds.size) {
     throw new RequestError("Проверьте список услуг.");
@@ -28,14 +28,15 @@ export function validateInfrastructureRequest(value) {
     selected.add(id);
   }
 
-  return { ...contact, serviceIds: [...selected] };
+  return { ...contact, serviceIds: [...selected], kind: value.kind };
 }
 
 /** @param {InfrastructureRequest} request @returns {import('./mail.js').MailMessage} */
 export function formatInfrastructureRequest(request) {
-  const chosen = infrastructureServices.filter((service) => request.serviceIds.includes(service.id));
+  const chosen = getInfrastructureServices(request.kind).filter((service) => request.serviceIds.includes(service.id));
+  const isAi = request.kind === "ai-infrastructure";
   const text = [
-    "Заявка на серверы и перенос инфраструктуры. Санкт-Петербург.",
+    isAi ? "Заявка на сервер для ИИ. Санкт-Петербург." : "Заявка на серверы и перенос инфраструктуры. Санкт-Петербург.",
     "",
     `Имя: ${request.name}`,
     `Телефон: ${request.phone}`,
@@ -50,5 +51,7 @@ export function formatInfrastructureRequest(request) {
     "Состав работ, оборудование, сроки, выезд и сопровождение согласуются после оценки.",
   ].join("\n");
 
-  return { subject: "Заявка на серверы в Санкт-Петербурге с its-global.ru/servers/", text };
+  return { subject: isAi
+    ? "Заявка на сервер для ИИ в Санкт-Петербурге с its-global.ru/ai-servers/"
+    : "Заявка на серверы в Санкт-Петербурге с its-global.ru/servers/", text };
 }

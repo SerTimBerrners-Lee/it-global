@@ -12,15 +12,40 @@ test("infrastructure requests reach the sender with the correct offer and scope"
   const { port, messages } = await fixture(context);
   const response = await post(port, {
     kind: "infrastructure", name: "Тест", phone: "+7 999 123-45-67",
-    message: "Перенести из ЦОДа", serviceIds: ["cloud-migration", "ai-server"], price: 9900,
+    message: "Перенести из ЦОДа", serviceIds: ["cloud-migration", "backup-recovery"], price: 9900,
   });
 
   assert.equal(response.status, 200);
   assert.equal(messages.length, 1);
   assert.match(messages[0].subject, /серверы в Санкт-Петербурге/);
   assert.match(messages[0].text, /Перенос из облаков и ЦОДов/);
-  assert.match(messages[0].text, /Сервер для ИИ/);
+  assert.match(messages[0].text, /Копии и восстановление/);
   assert.doesNotMatch(messages[0].text, /9 900|9900|49 900/);
+});
+
+test("AI server requests keep their page identity and dedicated services", async (context) => {
+  const { port, messages } = await fixture(context);
+  const response = await post(port, {
+    kind: "ai-infrastructure", name: "Тест", phone: "+7 999 123-45-67",
+    serviceIds: ["ai-server", "ai-models"],
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(messages.length, 1);
+  assert.match(messages[0].subject, /\/ai-servers\//);
+  assert.match(messages[0].text, /Развёртывание моделей/);
+});
+
+test("server pages cannot submit services from the other direction", async (context) => {
+  const { port, messages } = await fixture(context);
+
+  for (const [kind, serviceIds] of [["infrastructure", ["ai-server"]], ["ai-infrastructure", ["cloud-migration"]]]) {
+    const response = await post(port, { kind, serviceIds, name: "Тест", phone: "+7 999 123-45-67" });
+
+    assert.equal(response.status, 400);
+  }
+
+  assert.equal(messages.length, 0);
 });
 
 test("infrastructure requests reject unrelated services before sending", async (context) => {

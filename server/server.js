@@ -225,7 +225,8 @@ export function createApp({ sender, allowedOrigins, trustProxy = false, rateLimi
       attempts.set(address, entry);
       const payload = await readJson(request);
       const isAi = payload !== null && typeof payload === "object" && "kind" in payload && payload.kind === "ai";
-      const isInfrastructure = payload !== null && typeof payload === "object" && "kind" in payload && payload.kind === "infrastructure";
+      const isInfrastructure = payload !== null && typeof payload === "object" && "kind" in payload
+        && (payload.kind === "infrastructure" || payload.kind === "ai-infrastructure");
       const message = isInfrastructure
         ? formatInfrastructureRequest(validateInfrastructureRequest(payload))
         : isAi
