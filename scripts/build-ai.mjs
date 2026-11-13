@@ -19,7 +19,7 @@ function escape(value) {
 function photoFigure(photo, business = false) {
   const picture = '<img src="' + escape(photo.src) + '" width="' + photo.width + '" height="' + photo.height + '" alt="' + escape(photo.alt) + '" style="object-position:' + escape(photo.position) + '" loading="lazy" decoding="async">';
 
-  return '<figure class="ai-photo' + (business ? ' ai-business-photo' : '') + '">' + (business ? picture : '<div class="feature-visual">' + picture + '</div>') + '<figcaption>Фото: <a href="' + escape(photo.source) + '" target="_blank" rel="noopener noreferrer">' + escape(photo.author) + '</a> · <a href="https://www.pexels.com/license/" target="_blank" rel="noopener noreferrer">Pexels</a></figcaption></figure>';
+  return '<figure class="ai-photo' + (business ? ' ai-business-photo' : '') + '">' + (business ? picture : '<div class="feature-visual">' + picture + '</div>') + '</figure>';
 }
 
 /** @param {string} before @param {string} after @returns {void} */
@@ -124,7 +124,7 @@ const modelChecks = [
   ['private', 'Ресурсы и стоимость', 'Рассчитаем память, вычислительные ресурсы и расходы на обработку. Подберём локальную модель или облачное размещение с учётом нагрузки и требований к данным.'],
 ];
 
-html = html.replace(/<section class="security"[\s\S]*?<\/section>/, '<section class="security ai-quality" id="security" aria-labelledby="model-checks-heading"><div class="section-heading"><h2 id="model-checks-heading">Проверяем точность, скорость<br>и условия работы моделей</h2></div><div class="security-grid container">' + modelChecks.map(([icon, title, text]) => '<article class="security-card"><h3>' + title + '</h3><p>' + text + '</p><img class="metric-icon" src="/assets/ai-icons/' + icon + '.svg" width="72" height="72" alt="" loading="lazy"></article>').join('') + '</div><p class="container ai-quality-note">Безопасность проверяем отдельно: права доступа, защищённые соединения, резервные копии и журнал действий. Перед заменой модели повторяем проверку качества и скорости.</p></section>');
+html = html.replace(/<section class="security"[\s\S]*?<\/section>/, '<section class="security ai-quality" id="security" aria-labelledby="model-checks-heading"><div class="section-heading"><h2 id="model-checks-heading">Проверяем точность, скорость<br>и условия работы моделей</h2></div><div class="security-grid container">' + modelChecks.map(([icon, title, text]) => '<article class="security-card"><h3>' + title + '</h3><p>' + text + '</p><img class="metric-icon" src="/assets/ai-icons/' + icon + '.svg" width="72" height="72" alt="" loading="lazy"></article>').join('') + '</div></section>');
 
 html = html.replace(/<!-- catalog:start -->[\s\S]*?<!-- catalog:end -->/, '<!-- ai-catalog:start --><div class="service-grid" id="software-grid">' + services.map((service) => serviceCard(service, false, true)).join("\n") + '</div><!-- ai-catalog:end -->');
 
@@ -167,7 +167,7 @@ html = html.replace(/<div class="footer-links">[\s\S]*?<div class="footer-note">
 html = html.replace(/(<div class="footer-note">)[\s\S]*?(<p class="image-credits">)/, '$1<p>IT Global внедряет языковые модели под задачи бизнеса и производства. Подключаем знания компании, адаптируем модели, проверяем качество и обучаем сотрудников.</p><p>Состав работ, критерии приёмки, стоимость и условия сопровождения согласуем после оценки. Расходы на инфраструктуру, лицензии и внешние сервисы зависят от выбранного решения.</p><p>Калькулятор показывает условный пример по введённым параметрам. Значения не являются нашими тарифами. Денежная оценка освобождённого времени не гарантирует сокращение затрат. Иллюстрации интерфейсов показывают системы компании, с которыми может потребоваться интеграция.</p>$2');
 
 html = html.replace(' Иллюстрации интерфейсов показывают системы компании, с которыми может потребоваться интеграция.', '');
-html = html.replace(/<p class="image-credits">[\s\S]*?<\/p>/, '<p class="image-credits">Фотографии иллюстрируют рабочие сценарии. Авторы и источники указаны под снимками. Используются по <a href="https://www.pexels.com/license/" target="_blank" rel="noopener noreferrer">лицензии Pexels</a>.</p>');
+html = html.replace(/<p class="image-credits">[\s\S]*?<\/p>/, '');
 html = html.replaceAll('href="#security">Безопасность', 'href="#security">Качество и безопасность');
 
 const calculatorFields = [

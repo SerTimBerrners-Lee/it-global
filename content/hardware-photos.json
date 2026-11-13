@@ -2,14 +2,14 @@
   "tailored-services": {
     "src": "/assets/hardware-photos/server-components.jpg",
     "width": 1280,
-    "height": 745,
-    "alt": "Открытый корпус сервера Dell с оперативной памятью, накопителями и системой охлаждения",
-    "author": "arichnad",
-    "source": "https://commons.wikimedia.org/wiki/File:Inside_of_webserver.jpg",
-    "download": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/33/Inside_of_webserver.jpg/1280px-Inside_of_webserver.jpg",
-    "date": "2013-03-16",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "height": 853,
+    "alt": "Модули оперативной памяти и компьютерные компоненты крупным планом",
+    "author": "Sergei Starostin",
+    "source": "https://www.pexels.com/photo/green-and-black-computer-ram-stick-6636474/",
+    "download": "https://images.pexels.com/photos/6636474/pexels-photo-6636474.jpeg?cs=srgb&fm=jpg&w=1280",
+    "date": "2021-01-29",
+    "license": "Pexels License",
+    "licenseUrl": "https://www.pexels.com/license/",
     "position": "50% 50%"
   },
   "open-software": {

@@ -6,8 +6,6 @@
 .hardware-configurator .configuration-error{color:#a63520;font-size:14px;line-height:20px}
 @media(max-width:850px){.hardware-configurator .calculator-results{position:static}}
 .feature-photo{margin:0;min-width:0}
-.feature-photo figcaption{margin-top:10px;font-size:12px;line-height:18px;color:var(--muted)}
-.feature-photo figcaption a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .security-documentation{display:flex;flex-direction:column}
 .security-documentation h3{padding-bottom:12px;flex-shrink:0}
 .security-grid .security-card{min-height:302px}

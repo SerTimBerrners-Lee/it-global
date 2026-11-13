@@ -1,6 +1,4 @@
 .ai-photo{margin:0;min-width:0}
-.ai-photo figcaption{margin-top:10px;font-size:12px;line-height:18px;color:#73766c}
-.ai-photo figcaption a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .ai-photo .feature-visual{background:#eeeee4}
 .ai-business-photo{align-self:center}
 .ai-business-photo>img{display:block;width:100%;height:464px;object-fit:cover;object-position:50% 67%;border-radius:28px}
@@ -9,7 +7,6 @@
 .ai-quality .security-card h3{padding:0;font-size:24px;line-height:28px}
 .ai-quality .security-card p{margin-top:16px;font-size:16px;line-height:23px;color:#eeeee4}
 .ai-quality .metric-icon{width:72px;height:72px;align-self:flex-end;margin-top:auto;padding-top:16px;box-sizing:content-box}
-.ai-quality-note{margin-top:24px;color:#73766c;font-size:16px;line-height:24px;max-width:980px}
 @media(min-width:851px){.feature-reversed .ai-photo{grid-column:1;grid-row:1}}
 @media(max-width:850px){.ai-business-photo>img{height:420px}}
 @media(max-width:540px){.ai-quality .security-card{min-height:260px;padding:24px}.ai-quality .security-card h3{font-size:22px;line-height:26px}.ai-business-photo>img{height:340px}.solutions-cta .button{max-width:100%;text-align:center}}

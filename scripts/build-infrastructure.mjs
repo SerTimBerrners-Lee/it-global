@@ -30,7 +30,7 @@ function cards(items) {
 function renderFeature([heading, text, image], index, usePhotos) {
   const photo = usePhotos ? hardwarePhotos[image] : undefined;
   const visual = photo
-    ? '<figure class="feature-photo"><div class="feature-visual"><img src="' + escape(photo.src) + '" width="' + photo.width + '" height="' + photo.height + '" alt="' + escape(photo.alt) + '" style="object-position:' + escape(photo.position) + '" loading="lazy" decoding="async"></div><figcaption>Фото: <a href="' + escape(photo.source) + '" target="_blank" rel="noopener noreferrer">' + escape(photo.author) + '</a> · <a href="' + escape(photo.licenseUrl) + '" target="_blank" rel="noopener noreferrer">' + escape(photo.license) + '</a></figcaption></figure>'
+    ? '<figure class="feature-photo"><div class="feature-visual"><img src="' + escape(photo.src) + '" width="' + photo.width + '" height="' + photo.height + '" alt="' + escape(photo.alt) + '" style="object-position:' + escape(photo.position) + '" loading="lazy" decoding="async"></div></figure>'
     : '<div class="feature-visual"><img src="/assets/features/' + image + '.webp" srcset="/assets/features/' + image + '-720.webp 720w, /assets/features/' + image + '.webp 1355w" sizes="(max-width: 850px) calc(100vw - 32px), (max-width: 1504px) calc(50vw - 32px), 720px" width="1355" height="1160" alt="" loading="lazy" decoding="async"></div>';
 
   return '<article class="feature' + (index === 1 ? ' feature-reversed' : '') + '"><div class="feature-copy"><h2>' + heading + '</h2><p>' + escape(text) + '</p></div>' + visual + '</article>';
