@@ -1,0 +1,17 @@
+.hardware-configurator .calculator-grid{align-items:start}
+.hardware-configurator .form-row{margin-bottom:0}
+.hardware-configurator .calculator-results{position:sticky;top:24px}
+.hardware-configurator .calculator-results dd{white-space:normal;max-width:55%}
+.hardware-configurator .calculator-results .button{width:100%;margin-top:16px}
+.hardware-configurator .configuration-error{color:#a63520;font-size:14px;line-height:20px}
+@media(max-width:850px){.hardware-configurator .calculator-results{position:static}}
+.feature-photo{margin:0;min-width:0}
+.security-documentation{display:flex;flex-direction:column}
+.security-documentation h3{padding-bottom:12px;flex-shrink:0}
+.security-grid .security-card{min-height:302px}
+.security-documentation p{position:relative;z-index:1;margin:0 28px;font-size:14px;line-height:20px;color:#eeeee4;flex-shrink:0}
+.security-documentation-icon{display:block;width:70%;height:184px;min-height:0;flex:1 1 auto;margin:10px auto 8px;object-fit:contain}
+@media(min-width:851px){.feature-reversed .feature-photo{grid-column:1;grid-row:1}}
+@media(min-width:1201px){.security-documentation{height:340px}.security-grid:has(.security-documentation) .security-card{height:340px}.security-documentation-icon{height:174px}}
+@media(max-width:850px){.security-documentation-icon{height:166px}}
+@media(max-width:540px){.security-grid .security-card{height:286px;min-height:286px}.security-documentation p{margin-inline:16px;font-size:13px;line-height:18px}.security-documentation-icon{height:138px}}

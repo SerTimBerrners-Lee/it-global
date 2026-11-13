@@ -7,7 +7,8 @@ import { RequestError, formatRequest, validateRequest } from "../server/request.
 function request() {
   return {
     name: "Анна",
-    phone: "+7 (999) 123-45-67",
+    contact: "+7 (999) 123-45-67",
+    contactType: "phone",
     message: "Перенести почту\nи общие документы.",
     serviceIds: ["mail"],
     calculation: { current: 10000, plan: "single", needsVds: false },
@@ -22,7 +23,7 @@ function rejects(value) {
 test("validates and copies the supported fields without mutating the input", () => {
   const original = request();
   original.name = "  Анна Петрова  ";
-  original.phone = "  +7 (999) 123-45-67  ";
+  original.contact = "  +7 (999) 123-45-67  ";
   original.message = "  Перенести почту\nи общие документы.  ";
   const result = validateRequest(original);
 
@@ -51,11 +52,11 @@ test("rejects non-record bodies and blank, oversized or control-containing names
 
 test("accepts common phone formatting and enforces digit and format limits", () => {
   for (const phone of ["1234567", "+123456789012345", "8 (999) 123-45-67"]) {
-    assert.equal(validateRequest({ ...request(), phone }).phone, phone);
+    assert.equal(validateRequest({ ...request(), contact: phone }).contact, phone);
   }
 
   for (const phone of [undefined, null, 79991234567, "123456", "1234567890123456", "+7 letters 9991234567", "7+9991234567", "79991234567\n", "(".repeat(20) + "79991234567"]) {
-    rejects({ ...request(), phone });
+    rejects({ ...request(), contact: phone });
   }
 });
 
@@ -113,7 +114,7 @@ test("ignores tampered recipients, content and totals and calculates all four sc
     assert.ok(mail.text.includes("Экономия за первый год: " + scenario.savings));
     assert.ok(mail.text.includes("Разовое внедрение в расчёте: " + scenario.setup));
     assert.doesNotMatch(mail.text, /attacker|Forged|99999999/);
-    assert.deepEqual(Object.keys(validated), ["name", "phone", "message", "serviceIds", "calculation"]);
+    assert.deepEqual(Object.keys(validated), ["name", "contact", "contactType", "message", "serviceIds", "calculation"]);
     assert.deepEqual(Object.keys(validated.calculation), ["current", "plan", "needsVds"]);
   }
 });

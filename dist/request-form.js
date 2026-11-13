@@ -1,3 +1,4 @@
+import { parseContact } from "./contact.js";
 import { trackGoal } from "./analytics.js";
 
 /**
@@ -9,23 +10,17 @@ export function initializeRequestForm(getSelected, getCalculation) {
   const form = document.querySelector("#request-form");
   const submit = document.querySelector("#request-submit");
   const status = document.querySelector("#form-status");
-  const phone = form.elements.namedItem("phone");
+  const contact = form.elements.namedItem("contact");
   let sending = false;
 
-  phone.addEventListener("input", () => phone.setCustomValidity(""));
+  contact.addEventListener("input", () => contact.setCustomValidity(""));
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     if (sending) return;
 
-    const phoneDigits = phone.value.replace(/\D/g, "");
-
-    phone.setCustomValidity(
-      phoneDigits.length >= 7 && phoneDigits.length <= 15
-        ? ""
-        : "Введите номер телефона от 7 до 15 цифр.",
-    );
+    contact.setCustomValidity(parseContact(contact.value) ? "" : "Укажите телефон от 7 до 15 цифр или email, например name@company.ru.");
 
     if (!form.reportValidity()) return;
 
@@ -46,7 +41,7 @@ export function initializeRequestForm(getSelected, getCalculation) {
         signal: AbortSignal.timeout(60_000),
         body: JSON.stringify({
           name: fields.get("name"),
-          phone: fields.get("phone"),
+          contact: fields.get("contact"),
           message: fields.get("message"),
           serviceIds: getSelected(),
           calculation: {
@@ -63,7 +58,7 @@ export function initializeRequestForm(getSelected, getCalculation) {
       }
 
       status.dataset.state = "success";
-      status.textContent = "Заявка отправлена. Свяжемся с вами по указанному телефону.";
+      status.textContent = "Заявка отправлена. Свяжемся с вами по указанному контакту.";
       trackGoal("request_sent");
     } catch (error) {
       status.dataset.state = "error";
