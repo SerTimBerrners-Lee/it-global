@@ -1,5 +1,13 @@
 # Security illustrations
 
+## Documentation approval, 2026-11-13
+
+`documentation.png`: original illustration generated with the built-in ImageGen tool. Style reference: the existing local `backup.webp`. Transparent alpha retained; resized to 600 × 600 pixels for the site. The full generated original remains in the Codex generated images directory.
+
+Final prompt:
+
+Use case: stylized-concept. Create one original premium 3D documentation approval icon for the IT Global website. Image 1 is a style reference only, not an edit target. Match its tactile studio 3D material quality, soft rounded shapes, slightly elevated three-quarter perspective, soft upper-left lighting, matte ivory ceramic, muted sage green, terracotta orange and brushed silver. Subject: an ivory rounded technical-document clipboard with a small brushed silver clip, three recessed sage specification bars, and a substantial terracotta approval seal tile in front with a raised ivory check. A second ivory sheet peeks from behind to suggest an agreed documentation package. Simple large readable objects, visually balanced with the referenced backup illustration. Single isolated cohesive still life, centered square composition, fully framed, roughly 10 percent transparent margins. Actual transparent alpha background. No floor, backdrop, card, text, letters, numbers, logos, watermark or magnifying glass. Intended for the lower half of a charcoal website card titled documentation agreement.
+
 Generated on 2026-10-13 with the built-in image generation tool. Four original decorative 3D illustrations for IT Global. Generated as RGBA PNG files with transparent backgrounds. No existing brand illustrations or logos were used as references.
 
 ## Files

@@ -87,6 +87,7 @@ function render(page) {
     .replaceAll("./assets/", "/assets/");
 
   if (page.kind === "hardware") {
+    hero = hero.replace(/<div class="hero-apps"[^>]*>[\s\S]*?<\/div>/, "");
     hero = hero.replace(/<button class="button primary double"[\s\S]*?<\/button>/, '<a class="button primary double" href="#configuration">' + escape(page.primary) + '<small>' + escape(page.primaryNote) + '</small></a>');
   }
 
@@ -96,7 +97,7 @@ function render(page) {
     .replaceAll("./assets/", "/assets/");
 
   if (page.kind === "hardware") {
-    security = security.replace(/<article class="security-card"><h3>Журнал действий<\/h3>[\s\S]*?<\/article>/, '<article class="security-card security-documentation"><h3>Согласование документации</h3><p>До закупки и монтажа согласуем спецификацию, смету, план работ и критерии приёмки.</p><img class="security-documentation-icon" src="/assets/hardware-icons/documentation.svg" width="64" height="64" alt="" loading="lazy"></article>');
+    security = security.replace(/<article class="security-card"><h3>Журнал действий<\/h3>[\s\S]*?<\/article>/, '<article class="security-card security-documentation"><h3>Согласование документации</h3><p>До закупки и монтажа согласуем спецификацию, смету, план работ и критерии приёмки.</p><img class="security-documentation-icon" src="/assets/security/documentation.png" width="600" height="600" alt="" loading="lazy" decoding="async"></article>');
   }
 
   const footer = '<footer><div class="footer-dark"><div class="footer-top"><div><a class="brand" href="/"><span>IT</span><i aria-hidden="true"></i><span>Global</span></a><div class="footer-shortcuts"><button type="button" data-request>Заявка</button></div></div><div class="footer-links"><div><h4>Серверные услуги</h4><a href="/servers/">Корпоративные серверы и перенос</a><a href="/hardware/">Подбор физического сервера</a><a href="/ai/">Внедрение ИИ и обучение</a></div><div><h4>На этой странице</h4><a href="#services">Услуги</a><a href="#plans">Форматы работ</a><a href="#process">Этапы запуска</a></div><div><h4>Подготовка</h4><a href="#requirements">Что проверим</a><a href="#security">Безопасность</a><a href="#faq">Вопросы и ответы</a></div><div><h4>Санкт-Петербург</h4><a href="tel:+79211153143">+7 (921) 115-31-43</a><a href="/">Основной сайт</a><a href="#top">Наверх</a></div></div></div><div class="footer-note"><p>' + escape(page.description) + '</p><p>Состав работ, сроки, стоимость оборудования и условия сопровождения согласуем после оценки. Работы на площадке и подготовка помещения включаются в проект отдельно.</p><p class="copyright">© 2026 IT Global <a href="#top">Наверх</a></p></div></div></footer>';

@@ -4,6 +4,24 @@ import { services, serviceCard } from "../dist/ai/services.js";
 // Derive the AI page from the original homepage to retain its layout and artwork.
 let html = await readFile(new URL("../dist/index.html", import.meta.url), "utf8");
 
+/** @typedef {{src: string, width: number, height: number, alt: string, author: string, source: string, position: string}} AiPhoto */
+/** @type {Record<string, AiPhoto>} */
+const photos = JSON.parse(await readFile(new URL("../content/ai-photos.json", import.meta.url), "utf8"));
+
+/** @param {string} value @returns {string} */
+function escape(value) {
+  const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+
+  return value.replace(/[&<>"']/g, (character) => entities[character]);
+}
+
+/** @param {AiPhoto} photo @param {boolean} [business] @returns {string} */
+function photoFigure(photo, business = false) {
+  const picture = '<img src="' + escape(photo.src) + '" width="' + photo.width + '" height="' + photo.height + '" alt="' + escape(photo.alt) + '" style="object-position:' + escape(photo.position) + '" loading="lazy" decoding="async">';
+
+  return '<figure class="ai-photo' + (business ? ' ai-business-photo' : '') + '">' + (business ? picture : '<div class="feature-visual">' + picture + '</div>') + '<figcaption>Фото: <a href="' + escape(photo.source) + '" target="_blank" rel="noopener noreferrer">' + escape(photo.author) + '</a> · <a href="https://www.pexels.com/license/" target="_blank" rel="noopener noreferrer">Pexels</a></figcaption></figure>';
+}
+
 /** @param {string} before @param {string} after @returns {void} */
 function replace(before, after) {
   if (!html.includes(before)) throw new Error("Homepage text was changed: " + before.slice(0, 80));
@@ -88,6 +106,26 @@ const copy = [
 
 for (const [before, after] of copy) replace(before, after);
 
+html = html.replace(/<div class="hero-apps"[^>]*>[\s\S]*?<\/div>/, "");
+html = html.replace('</head>', '<link rel="stylesheet" href="/ai/site.css"></head>');
+
+const featurePhotos = [photos.documents, photos.production, photos.training];
+let photoIndex = 0;
+
+html = html.replace(/<div class="feature-visual"><img[^>]*><\/div>/g, () => photoFigure(featurePhotos[photoIndex++]));
+html = html.replace('Меньше рутины<br> в рабочих процессах', 'ИИ для производства<br> и рабочих процессов');
+html = html.replace('Настроим обработку документов, подготовку отчётов и сравнение предложений. Подключим нужные системы компании. Важные действия и итоговые материалы остаются под контролем специалистов.', 'Настроим распознавание маркировки и документов, сверку спецификаций и подготовку отчётов. Для поиска дефектов оценим модели компьютерного зрения на ваших снимках. Критерии качества и участие специалиста согласуем до пилота.');
+html = html.replace(/<div class="business-visual">[\s\S]*?<\/div><\/section>/, photoFigure(photos.engineer, true) + '</section>');
+
+const modelChecks = [
+  ['quality', 'Точность на ваших данных', 'Проверим правильность ответов, ссылки на источники и долю ошибок на отдельном наборе ваших задач. Критерии приёмки согласуем до пилота.'],
+  ['speed', 'Скорость под нагрузкой', 'Измерим время первого ответа и полной обработки, число одновременных запросов. Проверим, как меняется скорость на ваших объёмах документов.'],
+  ['tuning', 'Сравнение моделей', 'Сравним подходящие модели на одинаковых задачах: русский язык, работа с длинными документами и соблюдение формата. Покажем, где дообучение улучшает результат.'],
+  ['private', 'Ресурсы и стоимость', 'Рассчитаем память, вычислительные ресурсы и расходы на обработку. Подберём локальную модель или облачное размещение с учётом нагрузки и требований к данным.'],
+];
+
+html = html.replace(/<section class="security"[\s\S]*?<\/section>/, '<section class="security ai-quality" id="security" aria-labelledby="model-checks-heading"><div class="section-heading"><h2 id="model-checks-heading">Проверяем точность, скорость<br>и условия работы моделей</h2></div><div class="security-grid container">' + modelChecks.map(([icon, title, text]) => '<article class="security-card"><h3>' + title + '</h3><p>' + text + '</p><img class="metric-icon" src="/assets/ai-icons/' + icon + '.svg" width="72" height="72" alt="" loading="lazy"></article>').join('') + '</div><p class="container ai-quality-note">Безопасность проверяем отдельно: права доступа, защищённые соединения, резервные копии и журнал действий. Перед заменой модели повторяем проверку качества и скорости.</p></section>');
+
 html = html.replace(/<!-- catalog:start -->[\s\S]*?<!-- catalog:end -->/, '<!-- ai-catalog:start --><div class="service-grid" id="software-grid">' + services.map((service) => serviceCard(service, false, true)).join("\n") + '</div><!-- ai-catalog:end -->');
 
 const solutions = [
@@ -97,7 +135,7 @@ const solutions = [
   ["Помощник по документам", "Подключим инструкции, регламенты и базу знаний. Настроим поиск ответов со ссылками и учётом прав сотрудников."],
 ];
 
-html = html.replace(/<!-- solution-links:start -->[\s\S]*?<!-- solution-links:end -->/, '<section class="solutions-home container" id="solutions" aria-labelledby="solutions-heading"><h2 id="solutions-heading">Языковые модели под ваши задачи</h2><p>LLM, большие языковые модели, помогают работать с текстами, документами и знаниями компании.</p><div class="solution-links">' + solutions.map(([title, text]) => '<a class="solution-link" href="#services"><h3>' + title + '</h3><p>' + text + '</p></a>').join("") + '</div><p><button class="button" type="button" data-request>Обсудить внедрение и обучение ↗</button></p></section>');
+html = html.replace(/<!-- solution-links:start -->[\s\S]*?<!-- solution-links:end -->/, '<section class="solutions-home container" id="solutions" aria-labelledby="solutions-heading"><h2 id="solutions-heading">Языковые модели под ваши задачи</h2><p>LLM, большие языковые модели, помогают работать с текстами, документами и знаниями компании.</p><div class="solution-links">' + solutions.map(([title, text]) => '<a class="solution-link" href="#services"><h3>' + title + '</h3><p>' + text + '</p></a>').join("") + '</div><p class="solutions-cta"><button class="button" type="button" data-request>Обсудить внедрение и обучение ↗</button></p></section>');
 
 const questions = [
   ["Что вы внедряете?", "Языковые модели для рабочих задач: поиск по знаниям компании, обработка документов, подготовка отчётов и действия в информационных системах. Начинаем с одного процесса и проверяем результат до расширения."],
@@ -127,6 +165,10 @@ const footerGroups = [
 
 html = html.replace(/<div class="footer-links">[\s\S]*?<div class="footer-note">/, '<div class="footer-links">' + footerGroups.map(([title, links]) => '<div><h4>' + title + '</h4>' + links.map((label) => '<a href="#services">' + label + '</a>').join("") + '</div>').join("") + '</div></div><div class="footer-note">');
 html = html.replace(/(<div class="footer-note">)[\s\S]*?(<p class="image-credits">)/, '$1<p>IT Global внедряет языковые модели под задачи бизнеса и производства. Подключаем знания компании, адаптируем модели, проверяем качество и обучаем сотрудников.</p><p>Состав работ, критерии приёмки, стоимость и условия сопровождения согласуем после оценки. Расходы на инфраструктуру, лицензии и внешние сервисы зависят от выбранного решения.</p><p>Калькулятор показывает условный пример по введённым параметрам. Значения не являются нашими тарифами. Денежная оценка освобождённого времени не гарантирует сокращение затрат. Иллюстрации интерфейсов показывают системы компании, с которыми может потребоваться интеграция.</p>$2');
+
+html = html.replace(' Иллюстрации интерфейсов показывают системы компании, с которыми может потребоваться интеграция.', '');
+html = html.replace(/<p class="image-credits">[\s\S]*?<\/p>/, '<p class="image-credits">Фотографии иллюстрируют рабочие сценарии. Авторы и источники указаны под снимками. Используются по <a href="https://www.pexels.com/license/" target="_blank" rel="noopener noreferrer">лицензии Pexels</a>.</p>');
+html = html.replaceAll('href="#security">Безопасность', 'href="#security">Качество и безопасность');
 
 const calculatorFields = [
   ["volume", "Задач в месяц", "1", "1000000", "1", "1000"],

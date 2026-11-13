@@ -1,0 +1,38 @@
+{
+  "documents": {
+    "src": "/assets/ai-photos/documents.jpg",
+    "width": 1280,
+    "height": 846,
+    "alt": "Специалисты разбирают рабочие документы рядом с ноутбуком",
+    "author": "Mikhail Nilov",
+    "source": "https://www.pexels.com/photo/a-person-holding-pen-and-paper-7734568/",
+    "position": "50% 50%"
+  },
+  "production": {
+    "src": "/assets/ai-photos/production.jpg",
+    "width": 1280,
+    "height": 960,
+    "alt": "Роботизированное оборудование и рабочие станции на производственной площадке",
+    "author": "Ludovic Delot",
+    "source": "https://www.pexels.com/photo/robots-are-working-in-a-factory-with-a-machine-18471441/",
+    "position": "50% 50%"
+  },
+  "training": {
+    "src": "/assets/ai-photos/training.jpg",
+    "width": 1280,
+    "height": 853,
+    "alt": "Команда разбирает рабочую задачу с ведущей у доски",
+    "author": "Artem Podrez",
+    "source": "https://www.pexels.com/photo/woman-presenting-to-her-colleagues-8518619/",
+    "position": "50% 50%"
+  },
+  "engineer": {
+    "src": "/assets/ai-photos/engineer.jpg",
+    "width": 1280,
+    "height": 1920,
+    "alt": "Инженер с ноутбуком рядом с промышленным роботом",
+    "author": "Hoang NC",
+    "source": "https://www.pexels.com/photo/engineer-supervises-robotic-machinery-in-factory-36692505/",
+    "position": "50% 67%"
+  }
+}
