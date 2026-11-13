@@ -1,0 +1,41 @@
+{
+  "tailored-services": {
+    "src": "/assets/hardware-photos/server-components.jpg",
+    "width": 1280,
+    "height": 745,
+    "alt": "Открытый корпус сервера Dell с оперативной памятью, накопителями и системой охлаждения",
+    "author": "arichnad",
+    "source": "https://commons.wikimedia.org/wiki/File:Inside_of_webserver.jpg",
+    "download": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/33/Inside_of_webserver.jpg/1280px-Inside_of_webserver.jpg",
+    "date": "2013-03-16",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "position": "50% 50%"
+  },
+  "open-software": {
+    "src": "/assets/hardware-photos/server-racks.jpg",
+    "width": 1280,
+    "height": 850,
+    "alt": "Ряды реальных серверных стоек и кабельные трассы в машинном зале NERSC",
+    "author": "Derrick Coetzee",
+    "source": "https://commons.wikimedia.org/wiki/File:Front_of_server_racks_at_NERSC.jpg",
+    "download": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/51/Front_of_server_racks_at_NERSC.jpg/1280px-Front_of_server_racks_at_NERSC.jpg",
+    "date": "2011-10-14",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "position": "65% 50%"
+  },
+  "data-control": {
+    "src": "/assets/hardware-photos/equipment-installation.jpg",
+    "width": 1280,
+    "height": 852,
+    "alt": "Специалист устанавливает модуль оборудования в стойку",
+    "author": "panumas nikhomkhai",
+    "source": "https://www.pexels.com/photo/engineer-fixing-core-swith-in-data-center-room-19226354/",
+    "download": "https://images.pexels.com/photos/19226354/pexels-photo-19226354.jpeg?cs=srgb&fm=jpg&w=1280",
+    "date": "2015-06-27",
+    "license": "Pexels License",
+    "licenseUrl": "https://www.pexels.com/license/",
+    "position": "60% 50%"
+  }
+}

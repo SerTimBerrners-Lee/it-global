@@ -5,6 +5,9 @@ import { renderHardwareConfigurator } from "./hardware-configurator.mjs";
 
 const home = await readFile(new URL("../dist/index.html", import.meta.url), "utf8");
 const { url: origin } = JSON.parse(await readFile(new URL("../content/site.json", import.meta.url), "utf8"));
+/** @typedef {{src: string, width: number, height: number, alt: string, author: string, source: string, license: string, licenseUrl: string, position: string}} HardwarePhoto */
+/** @type {Record<string, HardwarePhoto>} */
+const hardwarePhotos = JSON.parse(await readFile(new URL("../content/hardware-photos.json", import.meta.url), "utf8"));
 
 /** @param {string} value @returns {string} */
 function escape(value) {
@@ -21,6 +24,16 @@ function checklist(items) {
 /** @param {string[][]} items @returns {string} */
 function cards(items) {
   return items.map(([heading, text]) => '<article class="solution-card"><h3>' + escape(heading) + '</h3><p>' + escape(text) + '</p></article>').join("");
+}
+
+/** @param {string[]} feature @param {number} index @param {boolean} usePhotos @returns {string} */
+function renderFeature([heading, text, image], index, usePhotos) {
+  const photo = usePhotos ? hardwarePhotos[image] : undefined;
+  const visual = photo
+    ? '<figure class="feature-photo"><div class="feature-visual"><img src="' + escape(photo.src) + '" width="' + photo.width + '" height="' + photo.height + '" alt="' + escape(photo.alt) + '" style="object-position:' + escape(photo.position) + '" loading="lazy" decoding="async"></div><figcaption>Фото: <a href="' + escape(photo.source) + '" target="_blank" rel="noopener noreferrer">' + escape(photo.author) + '</a> · <a href="' + escape(photo.licenseUrl) + '" target="_blank" rel="noopener noreferrer">' + escape(photo.license) + '</a></figcaption></figure>'
+    : '<div class="feature-visual"><img src="/assets/features/' + image + '.webp" srcset="/assets/features/' + image + '-720.webp 720w, /assets/features/' + image + '.webp 1355w" sizes="(max-width: 850px) calc(100vw - 32px), (max-width: 1504px) calc(50vw - 32px), 720px" width="1355" height="1160" alt="" loading="lazy" decoding="async"></div>';
+
+  return '<article class="feature' + (index === 1 ? ' feature-reversed' : '') + '"><div class="feature-copy"><h2>' + heading + '</h2><p>' + escape(text) + '</p></div>' + visual + '</article>';
 }
 
 /** @param {import('../content/server-offers.js').ServerOffer} page @returns {string} */
@@ -77,10 +90,14 @@ function render(page) {
     hero = hero.replace(/<button class="button primary double"[\s\S]*?<\/button>/, '<a class="button primary double" href="#configuration">' + escape(page.primary) + '<small>' + escape(page.primaryNote) + '</small></a>');
   }
 
-  const features = page.features.map(([heading, text, image], index) => '<article class="feature' + (index === 1 ? " feature-reversed" : "") + '"><div class="feature-copy"><h2>' + heading + "</h2><p>" + escape(text) + '</p></div><div class="feature-visual"><img src="/assets/features/' + image + '.webp" srcset="/assets/features/' + image + '-720.webp 720w, /assets/features/' + image + '.webp 1355w" sizes="(max-width: 850px) calc(100vw - 32px), (max-width: 1504px) calc(50vw - 32px), 720px" width="1355" height="1160" alt="" loading="lazy" decoding="async"></div></article>').join("");
+  const features = page.features.map((feature, index) => renderFeature(feature, index, page.kind === "hardware")).join("");
   const plans = page.plans.map((plan, index) => '<article class="plan-card' + (index === 1 ? " featured" : "") + '"><div class="plan-head"><div class="plan-intro"><h3>' + escape(plan.title) + '</h3><p>' + escape(plan.text) + '</p></div><button class="button double plan-cta' + (index === 1 ? " primary" : "") + '" type="button" data-request data-service="' + plan.service + '">' + escape(plan.cta) + '<small>' + escape(plan.note) + '</small></button></div><div class="plan-body">' + checklist(plan.items) + '</div></article>').join("");
-  const security = home.slice(home.indexOf('<section class="security"'), home.indexOf('<section class="business'))
+  let security = home.slice(home.indexOf('<section class="security"'), home.indexOf('<section class="business'))
     .replaceAll("./assets/", "/assets/");
+
+  if (page.kind === "hardware") {
+    security = security.replace(/<article class="security-card"><h3>Журнал действий<\/h3>[\s\S]*?<\/article>/, '<article class="security-card security-documentation"><h3>Согласование документации</h3><p>До закупки и монтажа согласуем спецификацию, смету, план работ и критерии приёмки.</p><img class="security-documentation-icon" src="/assets/hardware-icons/documentation.svg" width="64" height="64" alt="" loading="lazy"></article>');
+  }
 
   const footer = '<footer><div class="footer-dark"><div class="footer-top"><div><a class="brand" href="/"><span>IT</span><i aria-hidden="true"></i><span>Global</span></a><div class="footer-shortcuts"><button type="button" data-request>Заявка</button></div></div><div class="footer-links"><div><h4>Серверные услуги</h4><a href="/servers/">Корпоративные серверы и перенос</a><a href="/hardware/">Подбор физического сервера</a><a href="/ai/">Внедрение ИИ и обучение</a></div><div><h4>На этой странице</h4><a href="#services">Услуги</a><a href="#plans">Форматы работ</a><a href="#process">Этапы запуска</a></div><div><h4>Подготовка</h4><a href="#requirements">Что проверим</a><a href="#security">Безопасность</a><a href="#faq">Вопросы и ответы</a></div><div><h4>Санкт-Петербург</h4><a href="tel:+79211153143">+7 (921) 115-31-43</a><a href="/">Основной сайт</a><a href="#top">Наверх</a></div></div></div><div class="footer-note"><p>' + escape(page.description) + '</p><p>Состав работ, сроки, стоимость оборудования и условия сопровождения согласуем после оценки. Работы на площадке и подготовка помещения включаются в проект отдельно.</p><p class="copyright">© 2026 IT Global <a href="#top">Наверх</a></p></div></div></footer>';
 

@@ -5,3 +5,11 @@
 .hardware-configurator .calculator-results .button{width:100%;margin-top:16px}
 .hardware-configurator .configuration-error{color:#a63520;font-size:14px;line-height:20px}
 @media(max-width:850px){.hardware-configurator .calculator-results{position:static}}
+.feature-photo{margin:0;min-width:0}
+.feature-photo figcaption{margin-top:10px;font-size:12px;line-height:18px;color:var(--muted)}
+.feature-photo figcaption a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.security-documentation h3{padding-bottom:12px}
+.security-documentation p{position:relative;z-index:1;margin:0 28px;font-size:14px;line-height:20px;color:#eeeee4}
+.security-documentation-icon{position:absolute;right:20px;bottom:18px;width:64px;height:64px}
+@media(min-width:851px){.feature-reversed .feature-photo{grid-column:1;grid-row:1}}
+@media(max-width:540px){.security-documentation p{margin-inline:16px;font-size:13px;line-height:18px}.security-documentation-icon{right:16px;bottom:16px;width:56px;height:56px}}
